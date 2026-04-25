@@ -7,7 +7,6 @@ export default function Page() {
       icon={Users}
       title={`Visitantes`}
       subtitle={`Registro de visitantes dos cultos e eventos.`}
-      }
       ctaLabel={`Cadastrar Visitante`}
     />
   );

@@ -7,7 +7,6 @@ export default function Page() {
       icon={GraduationCap}
       title={`Capacitações & Treinamentos`}
       subtitle={`Formação teológica e missiológica · Cap. VII.`}
-      }
       ctaLabel={`Novo Treinamento`}
     />
   );

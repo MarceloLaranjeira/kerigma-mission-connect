@@ -7,7 +7,6 @@ export default function Page() {
       icon={Globe2}
       title={`Missões Mundiais`}
       subtitle={`Sustento e parcerias internacionais.`}
-      }
       ctaLabel={`Novo Projeto Mundial`}
     />
   );

@@ -7,7 +7,6 @@ export default function Page() {
       icon={Megaphone}
       title={`Campanhas Missionárias`}
       subtitle={`Mês de Missões Locais (mar), Nacionais (jun), Mundiais (set) e Especiais Ribeirinhas (Cap. VI).`}
-      }
       ctaLabel={`Nova Campanha`}
     />
   );

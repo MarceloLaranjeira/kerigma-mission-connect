@@ -7,7 +7,6 @@ export default function Page() {
       icon={Sparkles}
       title={`Novos Convertidos`}
       subtitle={`Cadastro e acompanhamento dos recém-convertidos para integração à IBK.`}
-      }
       ctaLabel={`Cadastrar Convertido`}
     />
   );

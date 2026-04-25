@@ -7,7 +7,6 @@ export default function Page() {
       icon={ScrollText}
       title={`Atas & Relatórios`}
       subtitle={`Registro oficial das reuniões e relatórios mensais da Equipe de Missões.`}
-      }
       ctaLabel={`Nova Ata`}
     />
   );

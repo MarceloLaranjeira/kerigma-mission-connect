@@ -7,7 +7,6 @@ export default function Page() {
       icon={BookOpen}
       title={`Acompanhamento & Discipulado`}
       subtitle={`Integração via Escola Bíblica Kerygma (EBK) e Grupos de Comunhão (GC).`}
-      }
       ctaLabel={`Nova Turma / GC`}
     />
   );

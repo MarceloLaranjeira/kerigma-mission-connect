@@ -7,7 +7,6 @@ export default function Page() {
       icon={Calendar}
       title={`Agenda Missionária`}
       subtitle={`Calendário oficial — cultos, viagens, treinamentos e campanhas.`}
-      }
       ctaLabel={`Novo Evento`}
     />
   );

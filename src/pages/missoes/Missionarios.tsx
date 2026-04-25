@@ -7,7 +7,6 @@ export default function Page() {
       icon={UserCog}
       title={`Missionários`}
       subtitle={`Cadastro e acompanhamento dos missionários enviados e apadrinhados pela IBK.`}
-      }
       ctaLabel={`Cadastrar Missionário`}
     />
   );

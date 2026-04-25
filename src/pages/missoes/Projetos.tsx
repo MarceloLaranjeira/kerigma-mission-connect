@@ -7,7 +7,6 @@ export default function Page() {
       icon={ClipboardList}
       title={`Projetos & Viagens`}
       subtitle={`Planejamento, logística e execução de projetos missionários e viagens em campo.`}
-      }
       ctaLabel={`Novo Projeto`}
     />
   );
