@@ -3,8 +3,11 @@ import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { AuthProvider } from "@/contexts/AuthContext";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
+import Login from "./pages/auth/Login";
 import Locais from "./pages/missoes/Locais";
 import Ribeirinhas from "./pages/missoes/Ribeirinhas";
 import Nacionais from "./pages/missoes/Nacionais";
@@ -24,32 +27,37 @@ import Configuracoes from "./pages/missoes/Configuracoes";
 
 const queryClient = new QueryClient();
 
+const P = ({ children }: { children: JSX.Element }) => <ProtectedRoute>{children}</ProtectedRoute>;
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/agenda" element={<Agenda />} />
-          <Route path="/locais" element={<Locais />} />
-          <Route path="/ribeirinhas" element={<Ribeirinhas />} />
-          <Route path="/nacionais" element={<Nacionais />} />
-          <Route path="/mundiais" element={<Mundiais />} />
-          <Route path="/convertidos" element={<Convertidos />} />
-          <Route path="/visitantes" element={<Visitantes />} />
-          <Route path="/discipulado" element={<Discipulado />} />
-          <Route path="/treinamento" element={<Treinamento />} />
-          <Route path="/missionarios" element={<Missionarios />} />
-          <Route path="/projetos" element={<Projetos />} />
-          <Route path="/campanhas" element={<Campanhas />} />
-          <Route path="/tesouraria" element={<Tesouraria />} />
-          <Route path="/atas" element={<Atas />} />
-          <Route path="/equipe" element={<Equipe />} />
-          <Route path="/configuracoes" element={<Configuracoes />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <AuthProvider>
+          <Routes>
+            <Route path="/login" element={<Login />} />
+            <Route path="/" element={<P><Index /></P>} />
+            <Route path="/agenda" element={<P><Agenda /></P>} />
+            <Route path="/locais" element={<P><Locais /></P>} />
+            <Route path="/ribeirinhas" element={<P><Ribeirinhas /></P>} />
+            <Route path="/nacionais" element={<P><Nacionais /></P>} />
+            <Route path="/mundiais" element={<P><Mundiais /></P>} />
+            <Route path="/convertidos" element={<P><Convertidos /></P>} />
+            <Route path="/visitantes" element={<P><Visitantes /></P>} />
+            <Route path="/discipulado" element={<P><Discipulado /></P>} />
+            <Route path="/treinamento" element={<P><Treinamento /></P>} />
+            <Route path="/missionarios" element={<P><Missionarios /></P>} />
+            <Route path="/projetos" element={<P><Projetos /></P>} />
+            <Route path="/campanhas" element={<P><Campanhas /></P>} />
+            <Route path="/tesouraria" element={<P><Tesouraria /></P>} />
+            <Route path="/atas" element={<P><Atas /></P>} />
+            <Route path="/equipe" element={<P><Equipe /></P>} />
+            <Route path="/configuracoes" element={<P><Configuracoes /></P>} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
