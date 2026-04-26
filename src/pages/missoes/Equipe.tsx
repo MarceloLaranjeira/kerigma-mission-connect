@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -11,8 +11,11 @@ import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { showError } from "@/lib/errors";
 import { getAvatarUrls } from "@/lib/avatarCache";
-import { Users, Search, Check, X, Loader2, ShieldCheck } from "lucide-react";
+import { Users, Search, Check, X, Loader2, ShieldCheck, Download, FileText, ChevronLeft, ChevronRight } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { exportCSV, exportPDF } from "@/lib/exportData";
+import { logAccess, logIfDenied } from "@/lib/accessLog";
 
 type Status = "pendente" | "ativo" | "inativo";
 type Role = "admin" | "coordenador" | "editor" | "voluntario";
@@ -39,10 +42,14 @@ const STATUS_COLOR: Record<Status,string> = {
 };
 
 export default function Equipe() {
-  const { isAdmin, user } = useAuth();
+  const { isAdmin, user, roles } = useAuth();
   const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [areaFilter, setAreaFilter] = useState<string>("all");
+  const [page, setPage] = useState(1);
+  const PAGE_SIZE = 10;
   const [confirmDel, setConfirmDel] = useState<Member | null>(null);
 
   const load = async () => {
@@ -51,7 +58,10 @@ export default function Equipe() {
       supabase.from("profiles").select("id,full_name,email,avatar_url,status,ministry_role,ministry_area,phone").order("created_at", { ascending: false }),
       supabase.from("user_roles").select("user_id,role"),
     ]);
-    if (e1 || e2) showError(e1 || e2, "Não foi possível carregar os membros.");
+    if (e1 || e2) {
+      await logIfDenied(e1 || e2, { resource: "profiles/user_roles", action: "select" });
+      showError(e1 || e2, "Não foi possível carregar os membros.");
+    }
     const map = new Map<string, Role[]>();
     (rs ?? []).forEach((r: any) => {
       const arr = map.get(r.user_id) ?? [];
@@ -71,7 +81,11 @@ export default function Equipe() {
 
   const updateStatus = async (m: Member, status: Status) => {
     const { error } = await supabase.from("profiles").update({ status }).eq("id", m.id);
-    if (error) return showError(error, "Não foi possível atualizar o status.");
+    if (error) {
+      await logIfDenied(error, { resource: "profiles", action: "update", details: { target: m.id, field: "status" } });
+      return showError(error, "Não foi possível atualizar o status.");
+    }
+    await logAccess({ event: status === "ativo" ? "member_approve" : "member_reject", resource: "profiles", action: "update", details: { target: m.id, status } });
     toast.success("Status atualizado");
     load();
   };
@@ -79,9 +93,10 @@ export default function Equipe() {
   const setPrimaryRole = async (m: Member, role: Role) => {
     // remove papéis existentes e adiciona o novo
     const { error: e1 } = await supabase.from("user_roles").delete().eq("user_id", m.id);
-    if (e1) return showError(e1, "Não foi possível atualizar o papel.");
+    if (e1) { await logIfDenied(e1, { resource: "user_roles", action: "delete", details: { target: m.id } }); return showError(e1, "Não foi possível atualizar o papel."); }
     const { error: e2 } = await supabase.from("user_roles").insert({ user_id: m.id, role });
-    if (e2) return showError(e2, "Não foi possível atualizar o papel.");
+    if (e2) { await logIfDenied(e2, { resource: "user_roles", action: "insert", details: { target: m.id, role } }); return showError(e2, "Não foi possível atualizar o papel."); }
+    await logAccess({ event: "role_change", resource: "user_roles", action: "update", details: { target: m.id, role } });
     toast.success("Papel atualizado");
     load();
   };
@@ -89,21 +104,55 @@ export default function Equipe() {
   const updateRoleField = async (m: Member, field: "ministry_role" | "ministry_area", val: string) => {
     const update: any = { [field]: val };
     const { error } = await supabase.from("profiles").update(update).eq("id", m.id);
-    if (error) return showError(error, "Não foi possível salvar.");
+    if (error) { await logIfDenied(error, { resource: "profiles", action: "update", details: { target: m.id, field } }); return showError(error, "Não foi possível salvar."); }
     load();
   };
 
   const removeMember = async (m: Member) => {
     const { error } = await supabase.from("profiles").delete().eq("id", m.id);
-    if (error) return showError(error, "Não foi possível remover o membro.");
+    if (error) { await logIfDenied(error, { resource: "profiles", action: "delete", details: { target: m.id } }); return showError(error, "Não foi possível remover o membro."); }
     toast.success("Membro removido");
     setConfirmDel(null); load();
   };
 
-  const filtered = members.filter((m) =>
-    [m.full_name, m.email, m.ministry_role].join(" ").toLowerCase().includes(q.toLowerCase())
-  );
+  const filtered = useMemo(() => {
+    return members.filter((m) => {
+      const matchesQ = !q || [m.full_name, m.email, m.ministry_role].join(" ").toLowerCase().includes(q.toLowerCase());
+      const matchesStatus = statusFilter === "all" || m.status === statusFilter;
+      const matchesArea = areaFilter === "all" || (m.ministry_area ?? "geral") === areaFilter;
+      return matchesQ && matchesStatus && matchesArea;
+    });
+  }, [members, q, statusFilter, areaFilter]);
+
+  useEffect(() => { setPage(1); }, [q, statusFilter, areaFilter]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const pageItems = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
   const pendentes = members.filter((m) => m.status === "pendente");
+
+  const canExport = isAdmin || roles.includes("coordenador");
+  const buildExportRows = () => {
+    const restrictSensitive = !isAdmin; // coordenador vê lista mas sem telefone/email
+    return filtered.map((m) => ({
+      Nome: m.full_name,
+      Email: restrictSensitive ? "" : (m.email ?? ""),
+      Telefone: restrictSensitive ? "" : (m.phone ?? ""),
+      Status: m.status,
+      Área: m.ministry_area ?? "",
+      Função: m.ministry_role ?? "",
+      Papéis: m.roles.map(r => ROLE_LABEL[r]).join(", "),
+    }));
+  };
+  const COLS = ["Nome","Email","Telefone","Status","Área","Função","Papéis"];
+
+  const onExportCSV = async () => {
+    exportCSV(`equipe-${new Date().toISOString().slice(0,10)}.csv`, COLS, buildExportRows());
+    await logAccess({ event: "export", resource: "profiles", action: "export_csv", details: { count: filtered.length } });
+  };
+  const onExportPDF = async () => {
+    exportPDF(`equipe-${new Date().toISOString().slice(0,10)}.pdf`, "Equipe — Ministério Missionário IBK", COLS, buildExportRows(), `Total: ${filtered.length} membros`);
+    await logAccess({ event: "export", resource: "profiles", action: "export_pdf", details: { count: filtered.length } });
+  };
 
   return (
     <AppLayout greeting="Equipe & Acessos">
@@ -167,18 +216,51 @@ export default function Equipe() {
       )}
 
       <Card className="p-4 bg-gradient-card border-border/60 shadow-card">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input placeholder="Buscar membro..." className="pl-9 bg-background" value={q} onChange={(e)=>setQ(e.target.value)} />
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="relative flex-1 min-w-[200px]">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input placeholder="Buscar por nome, e-mail ou função..." className="pl-9 bg-background" value={q} onChange={(e)=>setQ(e.target.value)} />
+          </div>
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-40 bg-background"><SelectValue placeholder="Status" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos status</SelectItem>
+              <SelectItem value="ativo">Ativo</SelectItem>
+              <SelectItem value="pendente">Pendente</SelectItem>
+              <SelectItem value="inativo">Inativo</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={areaFilter} onValueChange={setAreaFilter}>
+            <SelectTrigger className="w-44 bg-background"><SelectValue placeholder="Área" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas as áreas</SelectItem>
+              {["geral","locais","ribeirinhas","nacionais","mundiais","discipulado","treinamento","tesouraria"].map(o=>(
+                <SelectItem key={o} value={o} className="capitalize">{o}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {canExport && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="gap-2"><Download className="h-4 w-4" /> Exportar</Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={onExportCSV}><FileText className="h-4 w-4 mr-2" /> CSV</DropdownMenuItem>
+                <DropdownMenuItem onClick={onExportPDF}><FileText className="h-4 w-4 mr-2" /> PDF</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
         </div>
       </Card>
 
       <Card className="bg-gradient-card border-border/60 shadow-card overflow-hidden">
         {loading ? (
           <div className="p-10 flex items-center justify-center text-muted-foreground"><Loader2 className="h-5 w-5 animate-spin mr-2" /> Carregando…</div>
+        ) : pageItems.length === 0 ? (
+          <div className="p-10 text-center text-muted-foreground">Nenhum membro encontrado com esses filtros.</div>
         ) : (
           <ul className="divide-y divide-border">
-            {filtered.map((m) => (
+            {pageItems.map((m) => (
               <li key={m.id} className="px-5 py-4 flex flex-wrap items-center gap-3">
                 <Avatar className="h-11 w-11">
                   {m.avatar_url && <AvatarImage src={m.avatar_url} />}
@@ -236,6 +318,22 @@ export default function Equipe() {
               </li>
             ))}
           </ul>
+        )}
+        {!loading && filtered.length > 0 && (
+          <div className="flex items-center justify-between px-5 py-3 border-t border-border/60 text-sm">
+            <span className="text-muted-foreground">
+              {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, filtered.length)} de {filtered.length}
+            </span>
+            <div className="flex items-center gap-2">
+              <Button size="sm" variant="outline" disabled={page <= 1} onClick={() => setPage(p => Math.max(1, p - 1))}>
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <span>{page} / {totalPages}</span>
+              <Button size="sm" variant="outline" disabled={page >= totalPages} onClick={() => setPage(p => Math.min(totalPages, p + 1))}>
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
         )}
       </Card>
 
