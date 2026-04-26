@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
+import { friendlyError } from "@/lib/errors";
 import { Loader2, KeyRound } from "lucide-react";
 import logo from "@/assets/logo-kerygma.png";
 
@@ -33,7 +34,7 @@ export default function ResetPassword() {
     setBusy(true);
     const { error } = await supabase.auth.updateUser({ password });
     setBusy(false);
-    if (error) return toast.error(error.message);
+    if (error) return toast.error(friendlyError(error, "Não foi possível redefinir a senha."));
     toast.success("Senha atualizada! Faça login novamente.");
     await supabase.auth.signOut();
     navigate("/login", { replace: true });

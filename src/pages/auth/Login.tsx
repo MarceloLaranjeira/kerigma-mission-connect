@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
+import { friendlyError } from "@/lib/errors";
 import { Loader2, Heart, Globe2, Waves, Sparkles, ShieldCheck, UserPlus, Crown, CheckCircle2, MailCheck, ArrowLeft } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import logo from "@/assets/logo-kerygma.png";
@@ -28,7 +29,7 @@ export default function Login() {
     e.preventDefault(); setBusy(true);
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     setBusy(false);
-    if (error) return toast.error(error.message);
+    if (error) return toast.error(friendlyError(error, "Não foi possível entrar."));
     toast.success("Bem-vindo de volta!");
     navigate("/");
   };
@@ -46,7 +47,7 @@ export default function Login() {
       },
     });
     setBusy(false);
-    if (error) return toast.error(error.message);
+    if (error) return toast.error(friendlyError(error, "Não foi possível concluir o cadastro."));
     const needsConfirm = !data.session; // sem sessão = precisa confirmar email
     setSignupResult({ needsConfirm, isFirst });
   };
@@ -57,7 +58,7 @@ export default function Login() {
       redirectTo: `${window.location.origin}/reset-password`,
     });
     setBusy(false);
-    if (error) return toast.error(error.message);
+    if (error) return toast.error(friendlyError(error, "Não foi possível enviar o link."));
     toast.success("Enviamos um link para o seu e-mail.");
     setTab("entrar");
   };
