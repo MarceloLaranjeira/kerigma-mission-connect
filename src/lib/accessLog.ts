@@ -29,7 +29,7 @@ export async function logAccess({ event, resource, action, details }: LogParams)
   try {
     const { data: { user } } = await supabase.auth.getUser();
     const role = await fetchPrimaryRole(user?.id);
-    await supabase.from("access_logs").insert({
+    await supabase.from("access_logs").insert([{
       user_id: user?.id ?? null,
       email: user?.email ?? null,
       event,
@@ -38,7 +38,7 @@ export async function logAccess({ event, resource, action, details }: LogParams)
       role_at_event: role,
       details: details ?? null,
       user_agent: typeof navigator !== "undefined" ? navigator.userAgent.slice(0, 256) : null,
-    });
+    } as any]);
   } catch {
     // never break the UI on audit failures
   }
