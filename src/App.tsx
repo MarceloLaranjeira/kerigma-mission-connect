@@ -8,6 +8,8 @@ import { ProtectedRoute } from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import Login from "./pages/auth/Login";
+import ResetPassword from "./pages/auth/ResetPassword";
+import Perfil from "./pages/Perfil";
 import Locais from "./pages/missoes/Locais";
 import Ribeirinhas from "./pages/missoes/Ribeirinhas";
 import Nacionais from "./pages/missoes/Nacionais";
@@ -38,7 +40,9 @@ const App = () => (
         <AuthProvider>
           <Routes>
             <Route path="/login" element={<Login />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/" element={<P><Index /></P>} />
+            <Route path="/perfil" element={<P><Perfil /></P>} />
             <Route path="/agenda" element={<P><Agenda /></P>} />
             <Route path="/locais" element={<P><Locais /></P>} />
             <Route path="/ribeirinhas" element={<P><Ribeirinhas /></P>} />

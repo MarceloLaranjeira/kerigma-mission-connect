@@ -78,7 +78,8 @@ export default function Equipe() {
   };
 
   const updateRoleField = async (m: Member, field: "ministry_role" | "ministry_area", val: string) => {
-    const { error } = await supabase.from("profiles").update({ [field]: val }).eq("id", m.id);
+    const update: any = { [field]: val };
+    const { error } = await supabase.from("profiles").update(update).eq("id", m.id);
     if (error) return toast.error(error.message);
     load();
   };

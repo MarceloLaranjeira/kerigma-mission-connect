@@ -13,6 +13,13 @@ interface Profile {
   status: Status;
   ministry_role: string | null;
   phone: string | null;
+  birth_date: string | null;
+  neighborhood: string | null;
+  ministry_area: string | null;
+  baptism_date: string | null;
+  small_group: string | null;
+  ebk_completed: boolean | null;
+  gifts: string | null;
 }
 
 interface AuthCtx {
@@ -38,7 +45,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const loadProfile = async (uid: string) => {
     const [{ data: p }, { data: r }] = await Promise.all([
-      supabase.from("profiles").select("id,full_name,email,avatar_url,status,ministry_role,phone").eq("id", uid).maybeSingle(),
+      supabase.from("profiles").select("*").eq("id", uid).maybeSingle(),
       supabase.from("user_roles").select("role").eq("user_id", uid),
     ]);
     setProfile(p as any);
