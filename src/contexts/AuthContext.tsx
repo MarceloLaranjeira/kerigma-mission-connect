@@ -105,8 +105,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 }
 
+const FALLBACK: AuthCtx = {
+  user: null, session: null, profile: null, roles: [], loading: true,
+  canEdit: false, isAdmin: false,
+  signOut: async () => {},
+  refresh: async () => {},
+};
+
 export const useAuth = () => {
   const c = useContext(Ctx);
-  if (!c) throw new Error("useAuth fora do AuthProvider");
-  return c;
+  // During hot-module reloads the context can be momentarily missing.
+  // Returning a safe fallback avoids a hard crash / blank screen.
+  return c ?? FALLBACK;
 };
