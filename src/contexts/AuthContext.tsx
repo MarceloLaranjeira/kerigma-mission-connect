@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
+import { getAvatarUrl, clearAvatarCache } from "@/lib/avatarCache";
 
 type Role = "admin" | "coordenador" | "editor" | "voluntario";
 type Status = "pendente" | "ativo" | "inativo";
@@ -49,12 +50,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       supabase.from("user_roles").select("role").eq("user_id", uid),
     ]);
     let prof: any = p;
-    if (prof?.avatar_url && !/^https?:\/\//.test(prof.avatar_url)) {
-      // avatar_url is a storage path — resolve a signed URL for display
-      const { data: signed } = await supabase.storage
-        .from("avatars")
-        .createSignedUrl(prof.avatar_url, 60 * 60);
-      if (signed?.signedUrl) prof = { ...prof, avatar_url: signed.signedUrl };
+    if (prof?.avatar_url) {
+      const signed = await getAvatarUrl(prof.avatar_url);
+      if (signed) prof = { ...prof, avatar_url: signed };
     }
     setProfile(prof);
     setRoles((r ?? []).map((x: any) => x.role));
@@ -90,7 +88,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       value={{
         user, session, profile, roles, loading,
         canEdit, isAdmin,
-        signOut: async () => { await supabase.auth.signOut(); },
+        signOut: async () => { clearAvatarCache(); await supabase.auth.signOut(); },
         refresh: async () => { if (user) await loadProfile(user.id); },
       }}
     >

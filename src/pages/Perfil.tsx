@@ -12,7 +12,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { friendlyError } from "@/lib/errors";
+import { showError } from "@/lib/errors";
+import { invalidateAvatar } from "@/lib/avatarCache";
 import { Loader2, Camera, ShieldCheck, Clock, BadgeCheck, KeyRound, Sparkles, Heart } from "lucide-react";
 
 const AREAS = ["geral","ribeirinhas","nacionais","mundiais","discipulado","treinamento","convertidos"] as const;
@@ -74,7 +75,7 @@ export default function Perfil() {
     };
     const { error } = await supabase.from("profiles").update(payload).eq("id", user.id);
     setBusy(false);
-    if (error) return toast.error(friendlyError(error, "Não foi possível salvar o perfil."));
+    if (error) return showError(error, "Não foi possível salvar o perfil.");
     toast.success("Perfil atualizado");
     refresh();
   };
@@ -86,11 +87,12 @@ export default function Perfil() {
     const ext = file.name.split(".").pop();
     const path = `${user.id}/avatar-${Date.now()}.${ext}`;
     const { error: upErr } = await supabase.storage.from("avatars").upload(path, file, { upsert: true });
-    if (upErr) { setUploading(false); return toast.error(friendlyError(upErr, "Não foi possível enviar a imagem.")); }
+    if (upErr) { setUploading(false); return showError(upErr, "Não foi possível enviar a imagem."); }
+    invalidateAvatar(path);
     // Store the storage path (private bucket); signed URL is generated when displaying.
     const { error: dbErr } = await supabase.from("profiles").update({ avatar_url: path }).eq("id", user.id);
     setUploading(false);
-    if (dbErr) return toast.error(friendlyError(dbErr, "Não foi possível atualizar o perfil."));
+    if (dbErr) return showError(dbErr, "Não foi possível atualizar o perfil.");
     toast.success("Foto atualizada");
     refresh();
   };
@@ -100,7 +102,7 @@ export default function Perfil() {
     const { error } = await supabase.auth.resetPasswordForEmail(profile.email, {
       redirectTo: `${window.location.origin}/reset-password`,
     });
-    if (error) return toast.error(friendlyError(error, "Não foi possível enviar o link."));
+    if (error) return showError(error, "Não foi possível enviar o link.");
     toast.success("Enviamos um link de redefinição para o seu e-mail.");
   };
 
