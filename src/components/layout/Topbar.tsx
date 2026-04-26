@@ -1,7 +1,7 @@
-import { Bell, Search, Settings, LogOut } from "lucide-react";
+import { Bell, Search, Settings, LogOut, User } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/contexts/AuthContext";
 import { Link } from "react-router-dom";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -31,6 +31,7 @@ export function Topbar({ greeting }: { greeting?: string }) {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Avatar className="h-9 w-9 ring-2 ring-primary/30 cursor-pointer">
+              {profile?.avatar_url && <AvatarImage src={profile.avatar_url} alt={profile.full_name} />}
               <AvatarFallback className="bg-gradient-primary text-white text-xs font-semibold">{initials}</AvatarFallback>
             </Avatar>
           </DropdownMenuTrigger>
@@ -40,7 +41,8 @@ export function Topbar({ greeting }: { greeting?: string }) {
               <p className="text-xs text-muted-foreground font-normal">{profile?.email}</p>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem asChild><Link to="/configuracoes"><Settings className="h-4 w-4 mr-2" /> Meu perfil</Link></DropdownMenuItem>
+            <DropdownMenuItem asChild><Link to="/perfil"><User className="h-4 w-4 mr-2" /> Meu perfil</Link></DropdownMenuItem>
+            <DropdownMenuItem asChild><Link to="/configuracoes"><Settings className="h-4 w-4 mr-2" /> Configurações</Link></DropdownMenuItem>
             <DropdownMenuItem asChild><Link to="/equipe"><Settings className="h-4 w-4 mr-2" /> Equipe</Link></DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={signOut} className="text-destructive">
