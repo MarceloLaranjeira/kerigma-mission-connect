@@ -39,7 +39,6 @@ export async function getAvatarUrl(pathOrUrl: string | null | undefined): Promis
       .from("avatars")
       .createSignedUrl(pathOrUrl, TTL_SECONDS);
     if (error || !data?.signedUrl) {
-      // eslint-disable-next-line no-console
       console.warn("[avatarCache] failed to sign", pathOrUrl, error);
       return null;
     }

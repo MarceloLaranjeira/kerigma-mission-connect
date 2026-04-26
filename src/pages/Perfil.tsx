@@ -11,22 +11,36 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { type Enums, type TablesUpdate } from "@/integrations/supabase/types";
 import { toast } from "sonner";
 import { showError } from "@/lib/errors";
 import { invalidateAvatar } from "@/lib/avatarCache";
-import { Loader2, Camera, ShieldCheck, Clock, BadgeCheck, KeyRound, Sparkles, Heart, Download, FileText, Info, CheckCircle2, XCircle, HelpCircle } from "lucide-react";
+import { Loader2, Camera, ShieldCheck, Clock, BadgeCheck, KeyRound, Sparkles, Heart, Download, FileText, Info, CheckCircle2, XCircle, HelpCircle, type LucideIcon } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Button as UIButton } from "@/components/ui/button";
 import { exportCSV, exportPDF } from "@/lib/exportData";
 import { logAccess, logIfDenied } from "@/lib/accessLog";
 
-const AREAS = ["geral","ribeirinhas","nacionais","mundiais","discipulado","treinamento","convertidos"] as const;
+const AREAS: Enums<"ministry_area">[] = ["geral","locais","ribeirinhas","nacionais","mundiais","discipulado","treinamento","tesouraria"];
 
-const STATUS_BADGE: Record<string, { label: string; cls: string; icon: any }> = {
+const STATUS_BADGE: Record<Enums<"member_status">, { label: string; cls: string; icon: LucideIcon }> = {
   ativo:    { label: "Aprovado", cls: "bg-emerald-500/15 text-emerald-600 border-emerald-500/30", icon: BadgeCheck },
   pendente: { label: "Pendente", cls: "bg-amber-500/15 text-amber-600 border-amber-500/30", icon: Clock },
   inativo:  { label: "Inativo",  cls: "bg-muted text-muted-foreground border-border", icon: ShieldCheck },
+};
+
+type ProfileForm = {
+  full_name: string;
+  phone: string;
+  birth_date: string;
+  neighborhood: string;
+  ministry_role: string;
+  ministry_area: Enums<"ministry_area">;
+  baptism_date: string;
+  small_group: string;
+  ebk_completed: boolean;
+  gifts: string;
 };
 
 export default function Perfil() {
@@ -35,7 +49,7 @@ export default function Perfil() {
   const [uploading, setUploading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
-  const [form, setForm] = useState({
+  const [form, setForm] = useState<ProfileForm>({
     full_name: "", phone: "", birth_date: "", neighborhood: "",
     ministry_role: "", ministry_area: "geral",
     baptism_date: "", small_group: "", ebk_completed: false,
@@ -50,7 +64,7 @@ export default function Perfil() {
       birth_date: profile.birth_date ?? "",
       neighborhood: profile.neighborhood ?? "",
       ministry_role: profile.ministry_role ?? "",
-      ministry_area: (profile.ministry_area as any) ?? "geral",
+      ministry_area: profile.ministry_area ?? "geral",
       baptism_date: profile.baptism_date ?? "",
       small_group: profile.small_group ?? "",
       ebk_completed: !!profile.ebk_completed,
@@ -66,7 +80,7 @@ export default function Perfil() {
 
   const onSave = async () => {
     setBusy(true);
-    const payload: any = {
+    const payload: TablesUpdate<"profiles"> = {
       full_name: form.full_name,
       phone: form.phone || null,
       birth_date: form.birth_date || null,
@@ -294,7 +308,7 @@ export default function Perfil() {
                 <Input value={form.ministry_role} onChange={(e)=>setForm({...form, ministry_role: e.target.value})} placeholder="Ex.: Líder de viagem ribeirinha" />
               </Field>
               <Field label="Área de atuação">
-                <Select value={form.ministry_area} onValueChange={(v)=>setForm({...form, ministry_area: v})}>
+                <Select value={form.ministry_area} onValueChange={(v)=>setForm({...form, ministry_area: v as Enums<"ministry_area">})}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     {AREAS.map(a => <SelectItem key={a} value={a} className="capitalize">{a}</SelectItem>)}

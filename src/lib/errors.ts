@@ -5,11 +5,13 @@ import { toast } from "sonner";
  * Raw error details are logged to the console for debugging only.
  */
 export function friendlyError(error: unknown, fallback = "Ocorreu um erro. Tente novamente."): string {
-  // Always log the raw error for developers
-  // eslint-disable-next-line no-console
   console.error("[app-error]", error);
 
-  const msg = (error as any)?.message?.toString?.() ?? "";
+  const msg = error instanceof Error
+    ? error.message
+    : typeof error === "object" && error && "message" in error
+      ? String(error.message)
+      : "";
 
   if (/invalid login credentials/i.test(msg)) return "E-mail ou senha incorretos.";
   if (/email not confirmed/i.test(msg)) return "Confirme seu e-mail antes de entrar.";

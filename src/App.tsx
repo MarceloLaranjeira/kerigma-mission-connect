@@ -5,27 +5,21 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
-import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import Login from "./pages/auth/Login";
 import ResetPassword from "./pages/auth/ResetPassword";
 import Perfil from "./pages/Perfil";
-import Locais from "./pages/missoes/Locais";
-import Ribeirinhas from "./pages/missoes/Ribeirinhas";
-import Nacionais from "./pages/missoes/Nacionais";
-import Mundiais from "./pages/missoes/Mundiais";
-import Convertidos from "./pages/missoes/Convertidos";
-import Visitantes from "./pages/missoes/Visitantes";
-import Discipulado from "./pages/missoes/Discipulado";
-import Treinamento from "./pages/missoes/Treinamento";
-import Missionarios from "./pages/missoes/Missionarios";
-import Projetos from "./pages/missoes/Projetos";
-import Campanhas from "./pages/missoes/Campanhas";
-import Tesouraria from "./pages/missoes/Tesouraria";
-import Atas from "./pages/missoes/Atas";
 import Equipe from "./pages/missoes/Equipe";
-import Agenda from "./pages/missoes/Agenda";
-import Configuracoes from "./pages/missoes/Configuracoes";
+import Dashboard from "./pages/crm/Dashboard";
+import People from "./pages/crm/People";
+import Pipeline from "./pages/crm/Pipeline";
+import Activities from "./pages/crm/Activities";
+import Tasks from "./pages/crm/Tasks";
+import Agenda from "./pages/crm/Agenda";
+import Campaigns from "./pages/crm/Campaigns";
+import Finance from "./pages/crm/Finance";
+import Reports from "./pages/crm/Reports";
+import SettingsPage from "./pages/crm/Settings";
 
 const queryClient = new QueryClient();
 
@@ -41,24 +35,18 @@ const App = () => (
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/reset-password" element={<ResetPassword />} />
-            <Route path="/" element={<P><Index /></P>} />
+            <Route path="/" element={<P><Dashboard /></P>} />
+            <Route path="/pessoas" element={<P><People /></P>} />
+            <Route path="/pipeline" element={<P><Pipeline /></P>} />
+            <Route path="/atividades" element={<P><Activities /></P>} />
+            <Route path="/tarefas" element={<P><Tasks /></P>} />
             <Route path="/perfil" element={<P><Perfil /></P>} />
             <Route path="/agenda" element={<P><Agenda /></P>} />
-            <Route path="/locais" element={<P><Locais /></P>} />
-            <Route path="/ribeirinhas" element={<P><Ribeirinhas /></P>} />
-            <Route path="/nacionais" element={<P><Nacionais /></P>} />
-            <Route path="/mundiais" element={<P><Mundiais /></P>} />
-            <Route path="/convertidos" element={<P><Convertidos /></P>} />
-            <Route path="/visitantes" element={<P><Visitantes /></P>} />
-            <Route path="/discipulado" element={<P><Discipulado /></P>} />
-            <Route path="/treinamento" element={<P><Treinamento /></P>} />
-            <Route path="/missionarios" element={<P><Missionarios /></P>} />
-            <Route path="/projetos" element={<P><Projetos /></P>} />
-            <Route path="/campanhas" element={<P><Campanhas /></P>} />
-            <Route path="/tesouraria" element={<P><Tesouraria /></P>} />
-            <Route path="/atas" element={<P><Atas /></P>} />
+            <Route path="/campanhas" element={<P><Campaigns /></P>} />
+            <Route path="/financeiro" element={<P><Finance /></P>} />
+            <Route path="/relatorios" element={<P><Reports /></P>} />
             <Route path="/equipe" element={<P><Equipe /></P>} />
-            <Route path="/configuracoes" element={<P><Configuracoes /></P>} />
+            <Route path="/configuracoes" element={<P><SettingsPage /></P>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>

@@ -1,11 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-const createSignedUrl = vi.fn();
+type SignedUrlResponse = { data: { signedUrl: string } | null; error: unknown };
+type CreateSignedUrl = (path: string, expiresIn: number) => Promise<SignedUrlResponse>;
+
+const createSignedUrl = vi.fn<CreateSignedUrl>();
 
 vi.mock("@/integrations/supabase/client", () => ({
   supabase: {
     storage: {
-      from: () => ({ createSignedUrl: (...a: any[]) => createSignedUrl(...a) }),
+      from: () => ({ createSignedUrl: (path: string, expiresIn: number) => createSignedUrl(path, expiresIn) }),
     },
   },
 }));
@@ -40,7 +43,7 @@ describe("avatarCache", () => {
   });
 
   it("dedupes concurrent requests for the same path", async () => {
-    let resolve: (v: any) => void;
+    let resolve: (v: SignedUrlResponse) => void;
     createSignedUrl.mockImplementation(
       () => new Promise((r) => { resolve = r; }),
     );

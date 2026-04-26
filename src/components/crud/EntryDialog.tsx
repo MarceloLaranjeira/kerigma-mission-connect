@@ -4,13 +4,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { Entry } from "@/hooks/useEntries";
+import { Entry, type EntryPayload, type EntryUpdate } from "@/hooks/useEntries";
 
 interface Props {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   initial?: Entry | null;
-  onSubmit: (data: Partial<Entry>) => Promise<boolean>;
+  onSubmit: (data: EntryPayload | EntryUpdate) => Promise<boolean>;
   title: string;
 }
 

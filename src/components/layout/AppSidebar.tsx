@@ -1,52 +1,36 @@
 import { NavLink, useLocation } from "react-router-dom";
 import {
-  LayoutDashboard, Users, HeartHandshake, Waves, Globe2, MapPin,
-  ScrollText, Calendar, BookOpen, GraduationCap, Coins, Megaphone,
-  ClipboardList, Settings, UserCog, Sparkles
+  LayoutDashboard, Users, GitBranch, Activity, CheckSquare, CalendarDays,
+  Megaphone, Landmark, Settings, UserCog, BarChart3, Sparkles
 } from "lucide-react";
 import logo from "@/assets/logo-kerygma.png";
 
 const groups = [
   {
-    label: "Visão Geral",
+    label: "CRM",
     items: [
-      { to: "/", icon: LayoutDashboard, label: "Painel" },
-      { to: "/agenda", icon: Calendar, label: "Agenda Missionária" },
-    ],
-  },
-  {
-    label: "Frentes Missionárias",
-    items: [
-      { to: "/locais", icon: MapPin, label: "Missões Locais" },
-      { to: "/ribeirinhas", icon: Waves, label: "Missões Ribeirinhas" },
-      { to: "/nacionais", icon: HeartHandshake, label: "Missões Nacionais" },
-      { to: "/mundiais", icon: Globe2, label: "Missões Mundiais" },
-    ],
-  },
-  {
-    label: "Discipulado",
-    items: [
-      { to: "/convertidos", icon: Sparkles, label: "Novos Convertidos", badge: 14 },
-      { to: "/visitantes", icon: Users, label: "Visitantes" },
-      { to: "/discipulado", icon: BookOpen, label: "Acompanhamento" },
-      { to: "/treinamento", icon: GraduationCap, label: "Treinamentos" },
+      { to: "/", icon: LayoutDashboard, label: "Dashboard" },
+      { to: "/pessoas", icon: Users, label: "Pessoas" },
+      { to: "/pipeline", icon: GitBranch, label: "Pipeline" },
+      { to: "/atividades", icon: Activity, label: "Atividades" },
+      { to: "/tarefas", icon: CheckSquare, label: "Tarefas" },
     ],
   },
   {
     label: "Operação",
     items: [
-      { to: "/missionarios", icon: UserCog, label: "Missionários" },
-      { to: "/projetos", icon: ClipboardList, label: "Projetos & Viagens" },
+      { to: "/agenda", icon: CalendarDays, label: "Agenda" },
       { to: "/campanhas", icon: Megaphone, label: "Campanhas" },
-      { to: "/tesouraria", icon: Coins, label: "Tesouraria" },
-      { to: "/atas", icon: ScrollText, label: "Atas & Relatórios" },
+      { to: "/financeiro", icon: Landmark, label: "Financeiro" },
+      { to: "/relatorios", icon: BarChart3, label: "Relatórios" },
     ],
   },
   {
-    label: "Sistema",
+    label: "Administração",
     items: [
-      { to: "/equipe", icon: Users, label: "Equipe & Acessos" },
-      { to: "/configuracoes", icon: Settings, label: "Configurações" },
+      { to: "/equipe", icon: UserCog, label: "Equipe & Acessos" },
+      { to: "/configuracoes", icon: Settings, label: "Configurações CRM" },
+      { to: "/perfil", icon: Sparkles, label: "Meu Perfil" },
     ],
   },
 ];
@@ -100,12 +84,12 @@ export function AppSidebar() {
         ))}
       </nav>
 
-      <div className="m-3 p-4 rounded-xl bg-gradient-primary text-white shadow-elegant">
-        <p className="text-xs opacity-80">Cultura Kerygma</p>
-        <p className="text-sm font-semibold leading-snug mt-1">
-          "Pregar o Evangelho em todas as direções"
+      <div className="m-3 rounded-2xl border border-white/10 bg-white/5 p-4 text-white shadow-elegant backdrop-blur">
+        <p className="text-[11px] uppercase tracking-[0.22em] text-white/50">CRM Kerygma</p>
+        <p className="mt-2 text-sm font-semibold leading-snug">
+          Acompanhe visitantes, discipulado, campanhas e operação missionária em um só lugar.
         </p>
-        <p className="text-[11px] opacity-75 mt-2">João 3:30</p>
+        <p className="mt-3 text-[11px] text-white/60">Painel operacional da igreja</p>
       </div>
     </aside>
   );

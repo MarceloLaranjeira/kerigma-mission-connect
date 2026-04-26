@@ -7,8 +7,6 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "14.5"
   }
@@ -53,6 +51,579 @@ export type Database = {
           role_at_event?: string | null
           user_agent?: string | null
           user_id?: string | null
+        }
+        Relationships: []
+      }
+      crm_campaign_events: {
+        Row: {
+          campaign_id: string
+          created_at: string
+          event_id: string
+        }
+        Insert: {
+          campaign_id: string
+          created_at?: string
+          event_id: string
+        }
+        Update: {
+          campaign_id?: string
+          created_at?: string
+          event_id?: string
+        }
+        Relationships: []
+      }
+      crm_campaign_people: {
+        Row: {
+          campaign_id: string
+          created_at: string
+          person_id: string
+        }
+        Insert: {
+          campaign_id: string
+          created_at?: string
+          person_id: string
+        }
+        Update: {
+          campaign_id?: string
+          created_at?: string
+          person_id?: string
+        }
+        Relationships: []
+      }
+      crm_campaigns: {
+        Row: {
+          created_at: string
+          description: string | null
+          ends_at: string | null
+          front: Database["public"]["Enums"]["crm_front"]
+          goal_amount: number | null
+          id: string
+          owner_user_id: string | null
+          starts_at: string | null
+          status: Database["public"]["Enums"]["crm_campaign_status"]
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          ends_at?: string | null
+          front?: Database["public"]["Enums"]["crm_front"]
+          goal_amount?: number | null
+          id?: string
+          owner_user_id?: string | null
+          starts_at?: string | null
+          status?: Database["public"]["Enums"]["crm_campaign_status"]
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          ends_at?: string | null
+          front?: Database["public"]["Enums"]["crm_front"]
+          goal_amount?: number | null
+          id?: string
+          owner_user_id?: string | null
+          starts_at?: string | null
+          status?: Database["public"]["Enums"]["crm_campaign_status"]
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      crm_events: {
+        Row: {
+          created_at: string
+          description: string | null
+          ends_at: string | null
+          event_type: Database["public"]["Enums"]["crm_event_type"]
+          front: Database["public"]["Enums"]["crm_front"]
+          id: string
+          location: string | null
+          responsible_user_id: string | null
+          starts_at: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          ends_at?: string | null
+          event_type?: Database["public"]["Enums"]["crm_event_type"]
+          front?: Database["public"]["Enums"]["crm_front"]
+          id?: string
+          location?: string | null
+          responsible_user_id?: string | null
+          starts_at?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          ends_at?: string | null
+          event_type?: Database["public"]["Enums"]["crm_event_type"]
+          front?: Database["public"]["Enums"]["crm_front"]
+          id?: string
+          location?: string | null
+          responsible_user_id?: string | null
+          starts_at?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      crm_financial_categories: {
+        Row: {
+          active: boolean
+          color: string
+          created_at: string
+          id: string
+          name: string
+          sort_order: number
+        }
+        Insert: {
+          active?: boolean
+          color?: string
+          created_at?: string
+          id?: string
+          name: string
+          sort_order?: number
+        }
+        Update: {
+          active?: boolean
+          color?: string
+          created_at?: string
+          id?: string
+          name?: string
+          sort_order?: number
+        }
+        Relationships: []
+      }
+      crm_financial_entries: {
+        Row: {
+          amount: number
+          campaign_id: string | null
+          category_id: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          entry_date: string
+          id: string
+          responsible_user_id: string | null
+          type: Database["public"]["Enums"]["crm_financial_type"]
+        }
+        Insert: {
+          amount: number
+          campaign_id?: string | null
+          category_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          entry_date?: string
+          id?: string
+          responsible_user_id?: string | null
+          type: Database["public"]["Enums"]["crm_financial_type"]
+        }
+        Update: {
+          amount?: number
+          campaign_id?: string | null
+          category_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          entry_date?: string
+          id?: string
+          responsible_user_id?: string | null
+          type?: Database["public"]["Enums"]["crm_financial_type"]
+        }
+        Relationships: []
+      }
+      crm_household_members: {
+        Row: {
+          created_at: string
+          household_id: string
+          is_primary: boolean
+          person_id: string
+          relation_label: string | null
+        }
+        Insert: {
+          created_at?: string
+          household_id: string
+          is_primary?: boolean
+          person_id: string
+          relation_label?: string | null
+        }
+        Update: {
+          created_at?: string
+          household_id?: string
+          is_primary?: boolean
+          person_id?: string
+          relation_label?: string | null
+        }
+        Relationships: []
+      }
+      crm_households: {
+        Row: {
+          address_line: string | null
+          city: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          name: string
+          neighborhood: string | null
+          notes: string | null
+          state: string | null
+          updated_at: string
+        }
+        Insert: {
+          address_line?: string | null
+          city?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name: string
+          neighborhood?: string | null
+          notes?: string | null
+          state?: string | null
+          updated_at?: string
+        }
+        Update: {
+          address_line?: string | null
+          city?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name?: string
+          neighborhood?: string | null
+          notes?: string | null
+          state?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      crm_interactions: {
+        Row: {
+          created_at: string
+          description: string | null
+          happened_at: string
+          id: string
+          linked_campaign_id: string | null
+          linked_event_id: string | null
+          linked_task_id: string | null
+          person_id: string
+          responsible_user_id: string | null
+          title: string
+          type: Database["public"]["Enums"]["crm_interaction_type"]
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          happened_at?: string
+          id?: string
+          linked_campaign_id?: string | null
+          linked_event_id?: string | null
+          linked_task_id?: string | null
+          person_id: string
+          responsible_user_id?: string | null
+          title: string
+          type?: Database["public"]["Enums"]["crm_interaction_type"]
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          happened_at?: string
+          id?: string
+          linked_campaign_id?: string | null
+          linked_event_id?: string | null
+          linked_task_id?: string | null
+          person_id?: string
+          responsible_user_id?: string | null
+          title?: string
+          type?: Database["public"]["Enums"]["crm_interaction_type"]
+        }
+        Relationships: []
+      }
+      crm_notes: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          note: string
+          person_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          note: string
+          person_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          note?: string
+          person_id?: string
+        }
+        Relationships: []
+      }
+      crm_people: {
+        Row: {
+          address_line: string | null
+          assigned_user_id: string | null
+          birth_date: string | null
+          city: string | null
+          created_at: string
+          current_stage_id: string | null
+          email: string | null
+          front: Database["public"]["Enums"]["crm_front"]
+          full_name: string
+          id: string
+          is_active: boolean
+          lifecycle_status: Database["public"]["Enums"]["crm_lifecycle_status"]
+          marital_status: string | null
+          neighborhood: string | null
+          notes: string | null
+          phone: string | null
+          preferred_name: string | null
+          source_id: string | null
+          state: string | null
+          updated_at: string
+          whatsapp: string | null
+        }
+        Insert: {
+          address_line?: string | null
+          assigned_user_id?: string | null
+          birth_date?: string | null
+          city?: string | null
+          created_at?: string
+          current_stage_id?: string | null
+          email?: string | null
+          front?: Database["public"]["Enums"]["crm_front"]
+          full_name: string
+          id?: string
+          is_active?: boolean
+          lifecycle_status?: Database["public"]["Enums"]["crm_lifecycle_status"]
+          marital_status?: string | null
+          neighborhood?: string | null
+          notes?: string | null
+          phone?: string | null
+          preferred_name?: string | null
+          source_id?: string | null
+          state?: string | null
+          updated_at?: string
+          whatsapp?: string | null
+        }
+        Update: {
+          address_line?: string | null
+          assigned_user_id?: string | null
+          birth_date?: string | null
+          city?: string | null
+          created_at?: string
+          current_stage_id?: string | null
+          email?: string | null
+          front?: Database["public"]["Enums"]["crm_front"]
+          full_name?: string
+          id?: string
+          is_active?: boolean
+          lifecycle_status?: Database["public"]["Enums"]["crm_lifecycle_status"]
+          marital_status?: string | null
+          neighborhood?: string | null
+          notes?: string | null
+          phone?: string | null
+          preferred_name?: string | null
+          source_id?: string | null
+          state?: string | null
+          updated_at?: string
+          whatsapp?: string | null
+        }
+        Relationships: []
+      }
+      crm_people_tags: {
+        Row: {
+          created_at: string
+          person_id: string
+          tag_id: string
+        }
+        Insert: {
+          created_at?: string
+          person_id: string
+          tag_id: string
+        }
+        Update: {
+          created_at?: string
+          person_id?: string
+          tag_id?: string
+        }
+        Relationships: []
+      }
+      crm_pipeline_cards: {
+        Row: {
+          assigned_user_id: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          next_action: string | null
+          next_action_at: string | null
+          order_index: number
+          person_id: string
+          priority: Database["public"]["Enums"]["crm_priority"]
+          stage_id: string
+          summary: string | null
+          updated_at: string
+        }
+        Insert: {
+          assigned_user_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          next_action?: string | null
+          next_action_at?: string | null
+          order_index?: number
+          person_id: string
+          priority?: Database["public"]["Enums"]["crm_priority"]
+          stage_id: string
+          summary?: string | null
+          updated_at?: string
+        }
+        Update: {
+          assigned_user_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          next_action?: string | null
+          next_action_at?: string | null
+          order_index?: number
+          person_id?: string
+          priority?: Database["public"]["Enums"]["crm_priority"]
+          stage_id?: string
+          summary?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      crm_sources: {
+        Row: {
+          active: boolean
+          created_at: string
+          id: string
+          kind: string
+          name: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          kind?: string
+          name: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          kind?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      crm_stages: {
+        Row: {
+          color: string
+          created_at: string
+          id: string
+          is_closed: boolean
+          name: string
+          position: number
+          slug: string
+        }
+        Insert: {
+          color?: string
+          created_at?: string
+          id?: string
+          is_closed?: boolean
+          name: string
+          position: number
+          slug: string
+        }
+        Update: {
+          color?: string
+          created_at?: string
+          id?: string
+          is_closed?: boolean
+          name?: string
+          position?: number
+          slug?: string
+        }
+        Relationships: []
+      }
+      crm_tags: {
+        Row: {
+          color: string
+          created_at: string
+          id: string
+          name: string
+        }
+        Insert: {
+          color?: string
+          created_at?: string
+          id?: string
+          name: string
+        }
+        Update: {
+          color?: string
+          created_at?: string
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      crm_tasks: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          due_at: string | null
+          id: string
+          linked_campaign_id: string | null
+          linked_event_id: string | null
+          person_id: string | null
+          priority: Database["public"]["Enums"]["crm_priority"]
+          responsible_user_id: string | null
+          status: Database["public"]["Enums"]["crm_task_status"]
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          due_at?: string | null
+          id?: string
+          linked_campaign_id?: string | null
+          linked_event_id?: string | null
+          person_id?: string | null
+          priority?: Database["public"]["Enums"]["crm_priority"]
+          responsible_user_id?: string | null
+          status?: Database["public"]["Enums"]["crm_task_status"]
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          due_at?: string | null
+          id?: string
+          linked_campaign_id?: string | null
+          linked_event_id?: string | null
+          person_id?: string | null
+          priority?: Database["public"]["Enums"]["crm_priority"]
+          responsible_user_id?: string | null
+          status?: Database["public"]["Enums"]["crm_task_status"]
+          title?: string
+          updated_at?: string
         }
         Relationships: []
       }
@@ -218,6 +789,8 @@ export type Database = {
     }
     Functions: {
       can_edit: { Args: { _user_id: string }; Returns: boolean }
+      crm_can_manage: { Args: { _user_id: string }; Returns: boolean }
+      crm_user_is_active: { Args: { _user_id: string }; Returns: boolean }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -228,6 +801,30 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "coordenador" | "editor" | "voluntario"
+      crm_campaign_status: "rascunho" | "ativa" | "pausada" | "concluida" | "cancelada"
+      crm_event_type: "visita" | "treinamento" | "campanha" | "culto" | "reuniao" | "viagem" | "evangelismo"
+      crm_financial_type: "entrada" | "saida"
+      crm_front:
+        | "geral"
+        | "locais"
+        | "ribeirinhas"
+        | "nacionais"
+        | "mundiais"
+        | "discipulado"
+        | "treinamento"
+        | "tesouraria"
+      crm_interaction_type: "ligacao" | "visita" | "oracao" | "reuniao" | "culto" | "mensagem" | "decisao" | "discipulado" | "nota"
+      crm_lifecycle_status:
+        | "visitante"
+        | "primeiro_contato"
+        | "acompanhamento"
+        | "discipulado"
+        | "membro"
+        | "voluntario"
+        | "missionario"
+        | "inativo"
+      crm_priority: "baixa" | "media" | "alta" | "urgente"
+      crm_task_status: "aberta" | "em_andamento" | "concluida" | "cancelada"
       entry_type:
         | "locais"
         | "ribeirinhas"
@@ -382,6 +979,23 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "coordenador", "editor", "voluntario"],
+      crm_campaign_status: ["rascunho", "ativa", "pausada", "concluida", "cancelada"],
+      crm_event_type: ["visita", "treinamento", "campanha", "culto", "reuniao", "viagem", "evangelismo"],
+      crm_financial_type: ["entrada", "saida"],
+      crm_front: ["geral", "locais", "ribeirinhas", "nacionais", "mundiais", "discipulado", "treinamento", "tesouraria"],
+      crm_interaction_type: ["ligacao", "visita", "oracao", "reuniao", "culto", "mensagem", "decisao", "discipulado", "nota"],
+      crm_lifecycle_status: [
+        "visitante",
+        "primeiro_contato",
+        "acompanhamento",
+        "discipulado",
+        "membro",
+        "voluntario",
+        "missionario",
+        "inativo",
+      ],
+      crm_priority: ["baixa", "media", "alta", "urgente"],
+      crm_task_status: ["aberta", "em_andamento", "concluida", "cancelada"],
       entry_type: [
         "locais",
         "ribeirinhas",

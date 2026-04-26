@@ -6,9 +6,10 @@ export function AppLayout({ children, greeting }: { children: ReactNode; greetin
   return (
     <div className="min-h-screen flex bg-background">
       <AppSidebar />
-      <div className="flex-1 min-w-0 flex flex-col">
+      <div className="relative flex min-w-0 flex-1 flex-col overflow-hidden">
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,_rgba(37,99,235,0.12),_transparent_35%),radial-gradient(circle_at_top_left,_rgba(14,165,233,0.10),_transparent_32%)]" />
         <Topbar greeting={greeting} />
-        <main className="flex-1 p-6 space-y-6">{children}</main>
+        <main className="relative flex-1 space-y-6 p-6">{children}</main>
       </div>
     </div>
   );

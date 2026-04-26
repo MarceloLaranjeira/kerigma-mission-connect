@@ -12,19 +12,22 @@ export function Topbar({ greeting }: { greeting?: string }) {
   const display = greeting ?? `Bem-vindo, ${profile?.full_name?.split(" ")[0] ?? "Equipe"}!`;
 
   return (
-    <header className="sticky top-0 z-30 bg-background/80 backdrop-blur-xl border-b border-border">
+    <header className="sticky top-0 z-30 border-b border-border/70 bg-background/85 backdrop-blur-2xl">
       <div className="flex items-center gap-4 px-6 py-4">
         <div className="hidden md:block">
           <p className="text-lg font-semibold flex items-center gap-2">
-            <span className="text-warning">☀</span> {display}
+            <span className="text-warning">CRM</span> {display}
           </p>
-          <p className="text-sm text-muted-foreground">Equipe de Missões — Igreja Batista Kerygma</p>
+          <p className="text-sm text-muted-foreground">Operação pastoral e missionária da Igreja Batista Kerygma</p>
         </div>
-        <div className="flex-1 max-w-md ml-auto relative">
+        <div className="relative ml-auto flex-1 max-w-xl">
           <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-          <Input placeholder="Buscar missionário, convertido, projeto..." className="pl-9 bg-secondary/60 border-transparent" />
+          <Input
+            placeholder="Buscar pessoa, campanha, tarefa, atividade..."
+            className="h-11 rounded-2xl border-border/60 bg-secondary/60 pl-9"
+          />
         </div>
-        <Button size="icon" variant="ghost" className="relative">
+        <Button size="icon" variant="ghost" className="relative rounded-2xl">
           <Bell className="h-5 w-5" />
           <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-destructive" />
         </Button>
@@ -42,7 +45,7 @@ export function Topbar({ greeting }: { greeting?: string }) {
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild><Link to="/perfil"><User className="h-4 w-4 mr-2" /> Meu perfil</Link></DropdownMenuItem>
-            <DropdownMenuItem asChild><Link to="/configuracoes"><Settings className="h-4 w-4 mr-2" /> Configurações</Link></DropdownMenuItem>
+            <DropdownMenuItem asChild><Link to="/configuracoes"><Settings className="h-4 w-4 mr-2" /> Configurações CRM</Link></DropdownMenuItem>
             <DropdownMenuItem asChild><Link to="/equipe"><Settings className="h-4 w-4 mr-2" /> Equipe</Link></DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={signOut} className="text-destructive">

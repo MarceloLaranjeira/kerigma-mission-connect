@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
+import { type Enums, type Tables, type TablesUpdate } from "@/integrations/supabase/types";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { showError } from "@/lib/errors";
@@ -17,8 +18,11 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { exportCSV, exportPDF } from "@/lib/exportData";
 import { logAccess, logIfDenied } from "@/lib/accessLog";
 
-type Status = "pendente" | "ativo" | "inativo";
-type Role = "admin" | "coordenador" | "editor" | "voluntario";
+type Status = Enums<"member_status">;
+type Role = Enums<"app_role">;
+type MinistryArea = Enums<"ministry_area">;
+type ProfileRow = Pick<Tables<"profiles">, "id" | "full_name" | "email" | "avatar_url" | "status" | "ministry_role" | "ministry_area" | "phone">;
+type RoleRow = Pick<Tables<"user_roles">, "user_id" | "role">;
 
 interface Member {
   id: string;
@@ -27,7 +31,7 @@ interface Member {
   avatar_url: string | null;
   status: Status;
   ministry_role: string | null;
-  ministry_area: string | null;
+  ministry_area: MinistryArea | null;
   phone: string | null;
   roles: Role[];
 }
@@ -63,13 +67,14 @@ export default function Equipe() {
       showError(e1 || e2, "Não foi possível carregar os membros.");
     }
     const map = new Map<string, Role[]>();
-    (rs ?? []).forEach((r: any) => {
+    ((rs ?? []) as RoleRow[]).forEach((r) => {
       const arr = map.get(r.user_id) ?? [];
       arr.push(r.role); map.set(r.user_id, arr);
     });
     // Resolve signed URLs in parallel via the cached helper (avoids duplicate sign calls).
-    const signedUrls = await getAvatarUrls((ps ?? []).map((p: any) => p.avatar_url));
-    const list = (ps ?? []).map((p: any, i: number) => ({
+    const profiles = (ps ?? []) as ProfileRow[];
+    const signedUrls = await getAvatarUrls(profiles.map((p) => p.avatar_url));
+    const list = profiles.map((p, i): Member => ({
       ...p,
       avatar_url: signedUrls[i],
       roles: map.get(p.id) ?? [],
@@ -102,7 +107,9 @@ export default function Equipe() {
   };
 
   const updateRoleField = async (m: Member, field: "ministry_role" | "ministry_area", val: string) => {
-    const update: any = { [field]: val };
+    const update: TablesUpdate<"profiles"> = field === "ministry_area"
+      ? { ministry_area: val as MinistryArea }
+      : { ministry_role: val };
     const { error } = await supabase.from("profiles").update(update).eq("id", m.id);
     if (error) { await logIfDenied(error, { resource: "profiles", action: "update", details: { target: m.id, field } }); return showError(error, "Não foi possível salvar."); }
     load();

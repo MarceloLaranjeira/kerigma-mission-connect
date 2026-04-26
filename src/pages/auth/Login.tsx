@@ -8,7 +8,7 @@ import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { friendlyError } from "@/lib/errors";
-import { Loader2, Heart, Globe2, Waves, Sparkles, Crown, CheckCircle2, MailCheck, ArrowLeft } from "lucide-react";
+import { Loader2, Heart, Globe2, Waves, Sparkles, ShieldCheck, UserPlus, Crown, CheckCircle2, MailCheck, ArrowLeft } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import logo from "@/assets/logo-kerygma.png";
 import hero from "@/assets/missions-hero.jpg";
@@ -22,6 +22,9 @@ export default function Login() {
   const [name, setName] = useState("");
   const [busy, setBusy] = useState(false);
   const [signupResult, setSignupResult] = useState<null | { needsConfirm: boolean; isFirst: boolean }>(null);
+  const handleTabChange = (value: string) => {
+    if (value === "entrar" || value === "cadastrar" || value === "recuperar") setTab(value);
+  };
 
   if (!loading && user) return <Navigate to="/" replace />;
 
@@ -127,7 +130,7 @@ export default function Login() {
             Acesse o painel da Equipe de Missões da IBK.
           </p>
 
-          <Tabs value={tab} onValueChange={(v) => setTab(v as any)}>
+          <Tabs value={tab} onValueChange={handleTabChange}>
             <TabsList className="grid grid-cols-2 w-full mb-4">
               <TabsTrigger value="entrar">Entrar</TabsTrigger>
               <TabsTrigger value="cadastrar">Cadastrar</TabsTrigger>
@@ -194,6 +197,51 @@ export default function Login() {
               </form>
             </TabsContent>
           </Tabs>
+
+          {/* Passo a passo */}
+          <div className="mt-8 pt-6 border-t border-border/60">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+              Como funciona o acesso
+            </p>
+            <ol className="space-y-3 text-sm">
+              <li className="flex gap-3">
+                <div className="h-7 w-7 rounded-full bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                  <Crown className="h-4 w-4" />
+                </div>
+                <div>
+                  <p className="font-medium">1. Primeiro cadastro vira Admin</p>
+                  <p className="text-xs text-muted-foreground">
+                    O <strong>primeiro</strong> usuário a se cadastrar é promovido automaticamente
+                    a Administrador da IBK.
+                  </p>
+                </div>
+              </li>
+              <li className="flex gap-3">
+                <div className="h-7 w-7 rounded-full bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                  <UserPlus className="h-4 w-4" />
+                </div>
+                <div>
+                  <p className="font-medium">2. Demais membros se auto-cadastram</p>
+                  <p className="text-xs text-muted-foreground">
+                    Cada membro do ministério usa a aba <strong>Cadastrar</strong> e fica como
+                    "pendente" até ser aprovado.
+                  </p>
+                </div>
+              </li>
+              <li className="flex gap-3">
+                <div className="h-7 w-7 rounded-full bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                  <ShieldCheck className="h-4 w-4" />
+                </div>
+                <div>
+                  <p className="font-medium">3. Admin aprova em "Equipe"</p>
+                  <p className="text-xs text-muted-foreground">
+                    No menu <strong>Equipe</strong>, o Admin aprova pendentes e define o papel
+                    (Coordenador, Editor ou Voluntário).
+                  </p>
+                </div>
+              </li>
+            </ol>
+          </div>
           </>
           )}
         </Card>
