@@ -14,6 +14,48 @@ export type Database = {
   }
   public: {
     Tables: {
+      access_logs: {
+        Row: {
+          action: string | null
+          created_at: string
+          details: Json | null
+          email: string | null
+          event: string
+          id: string
+          ip: string | null
+          resource: string | null
+          role_at_event: string | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action?: string | null
+          created_at?: string
+          details?: Json | null
+          email?: string | null
+          event: string
+          id?: string
+          ip?: string | null
+          resource?: string | null
+          role_at_event?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string | null
+          created_at?: string
+          details?: Json | null
+          email?: string | null
+          event?: string
+          id?: string
+          ip?: string | null
+          resource?: string | null
+          role_at_event?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       entries: {
         Row: {
           amount: number | null

@@ -14,7 +14,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { showError } from "@/lib/errors";
 import { invalidateAvatar } from "@/lib/avatarCache";
-import { Loader2, Camera, ShieldCheck, Clock, BadgeCheck, KeyRound, Sparkles, Heart } from "lucide-react";
+import { Loader2, Camera, ShieldCheck, Clock, BadgeCheck, KeyRound, Sparkles, Heart, Download, FileText, Info, CheckCircle2, XCircle, HelpCircle } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Button as UIButton } from "@/components/ui/button";
+import { exportCSV, exportPDF } from "@/lib/exportData";
+import { logAccess, logIfDenied } from "@/lib/accessLog";
 
 const AREAS = ["geral","ribeirinhas","nacionais","mundiais","discipulado","treinamento","convertidos"] as const;
 
@@ -75,7 +80,11 @@ export default function Perfil() {
     };
     const { error } = await supabase.from("profiles").update(payload).eq("id", user.id);
     setBusy(false);
-    if (error) return showError(error, "Não foi possível salvar o perfil.");
+    if (error) {
+      await logIfDenied(error, { resource: "profiles", action: "update_self" });
+      return showError(error, "Não foi possível salvar o perfil.");
+    }
+    await logAccess({ event: "profile_update", resource: "profiles", action: "update_self" });
     toast.success("Perfil atualizado");
     refresh();
   };
@@ -92,7 +101,7 @@ export default function Perfil() {
     // Store the storage path (private bucket); signed URL is generated when displaying.
     const { error: dbErr } = await supabase.from("profiles").update({ avatar_url: path }).eq("id", user.id);
     setUploading(false);
-    if (dbErr) return showError(dbErr, "Não foi possível atualizar o perfil.");
+    if (dbErr) { await logIfDenied(dbErr, { resource: "profiles", action: "update_avatar" }); return showError(dbErr, "Não foi possível atualizar o perfil."); }
     toast.success("Foto atualizada");
     refresh();
   };
@@ -105,6 +114,37 @@ export default function Perfil() {
     if (error) return showError(error, "Não foi possível enviar o link.");
     toast.success("Enviamos um link de redefinição para o seu e-mail.");
   };
+
+  const buildExportRow = () => ([{
+    Nome: form.full_name,
+    Email: profile.email ?? "",
+    Telefone: form.phone,
+    "Data de nascimento": form.birth_date,
+    Bairro: form.neighborhood,
+    "Função ministerial": form.ministry_role,
+    "Área de atuação": form.ministry_area,
+    "Data de batismo": form.baptism_date,
+    "Pequeno grupo": form.small_group,
+    "EBK concluída": form.ebk_completed ? "Sim" : "Não",
+    "Dons espirituais": form.gifts,
+    Status: profile.status,
+    Papéis: roles.join(", "),
+  }]);
+  const COLS = ["Nome","Email","Telefone","Data de nascimento","Bairro","Função ministerial","Área de atuação","Data de batismo","Pequeno grupo","EBK concluída","Dons espirituais","Status","Papéis"];
+
+  const onExportCSV = async () => {
+    exportCSV(`meu-perfil-${new Date().toISOString().slice(0,10)}.csv`, COLS, buildExportRow());
+    await logAccess({ event: "export", resource: "profiles", action: "export_csv_self" });
+  };
+  const onExportPDF = async () => {
+    exportPDF(`meu-perfil-${new Date().toISOString().slice(0,10)}.pdf`, "Meu Perfil — IBK", COLS, buildExportRow());
+    await logAccess({ event: "export", resource: "profiles", action: "export_pdf_self" });
+  };
+
+  // Aprovação pendente: o que falta e o que pode/não pode fazer
+  const isPending = profile.status === "pendente";
+  const isInactive = profile.status === "inativo";
+  const canEditApp = profile.status === "ativo" && roles.some(r => ["admin","coordenador","editor"].includes(r));
 
   return (
     <AppLayout greeting="Meu Perfil">
@@ -136,6 +176,21 @@ export default function Perfil() {
             <Badge variant="outline" className={`mt-3 gap-1 ${status.cls}`}>
               <StIcon className="h-3 w-3" /> {status.label}
             </Badge>
+
+            <TooltipProvider delayDuration={150}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <UIButton variant="ghost" size="sm" className="mt-1 gap-1 text-xs text-muted-foreground">
+                    <HelpCircle className="h-3.5 w-3.5" /> O que esse status significa?
+                  </UIButton>
+                </TooltipTrigger>
+                <TooltipContent className="max-w-xs text-left">
+                  {isPending && <p>Seu cadastro está aguardando aprovação. Um Administrador ou Coordenador precisa aprovar você na aba <strong>Equipe</strong>.</p>}
+                  {isInactive && <p>Sua conta está inativa. Solicite a reativação a um Administrador.</p>}
+                  {profile.status === "ativo" && <p>Sua conta está ativa. Suas permissões dependem dos papéis atribuídos.</p>}
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </div>
 
           <div className="border-t border-border/60 pt-4 space-y-3">
@@ -149,10 +204,39 @@ export default function Perfil() {
               </div>
             </div>
 
-            {profile.status === "pendente" && (
-              <p className="text-xs text-amber-600 bg-amber-500/10 border border-amber-500/20 rounded-md p-2">
-                Seu cadastro ainda está aguardando aprovação de um Coordenador ou Administrador.
-              </p>
+            {isPending && (
+              <div className="text-xs bg-amber-500/10 border border-amber-500/20 rounded-md p-3 space-y-2">
+                <p className="font-semibold text-amber-700 flex items-center gap-1.5"><Info className="h-3.5 w-3.5" /> Aguardando aprovação</p>
+                <p className="text-amber-700/90">Para liberar seu acesso completo:</p>
+                <ul className="space-y-1 text-amber-700/90 list-disc list-inside">
+                  <li>Complete seus dados básicos e ministeriais nesta página</li>
+                  <li>Avise um Coordenador ou Administrador que você se cadastrou</li>
+                  <li>Aguarde a aprovação na aba <strong>Equipe</strong></li>
+                </ul>
+                <div className="border-t border-amber-500/30 pt-2 mt-2">
+                  <p className="font-semibold text-amber-700 mb-1">O que você pode fazer agora:</p>
+                  <p className="flex items-center gap-1.5 text-emerald-700"><CheckCircle2 className="h-3.5 w-3.5" /> Editar seu perfil e enviar foto</p>
+                  <p className="flex items-center gap-1.5 text-emerald-700"><CheckCircle2 className="h-3.5 w-3.5" /> Visualizar páginas do ministério</p>
+                  <p className="flex items-center gap-1.5 text-rose-700 mt-1"><XCircle className="h-3.5 w-3.5" /> Criar / editar / excluir registros</p>
+                  <p className="flex items-center gap-1.5 text-rose-700"><XCircle className="h-3.5 w-3.5" /> Aprovar membros ou alterar papéis</p>
+                </div>
+              </div>
+            )}
+            {isInactive && (
+              <div className="text-xs bg-rose-500/10 border border-rose-500/20 rounded-md p-3 text-rose-700">
+                <p className="font-semibold mb-1">Conta inativa</p>
+                <p>Você pode visualizar seu perfil, mas não pode editar registros do ministério. Solicite reativação a um Administrador.</p>
+              </div>
+            )}
+            {!isPending && !isInactive && (
+              <div className="text-xs bg-emerald-500/10 border border-emerald-500/20 rounded-md p-3 text-emerald-700 space-y-1">
+                <p className="font-semibold flex items-center gap-1.5"><CheckCircle2 className="h-3.5 w-3.5" /> Acesso liberado</p>
+                {canEditApp ? (
+                  <p>Você pode visualizar e editar registros conforme seus papéis.</p>
+                ) : (
+                  <p>Você pode visualizar todas as páginas do ministério. Edição de registros requer papel de Editor, Coordenador ou Admin.</p>
+                )}
+              </div>
             )}
             {isAdmin && (
               <p className="text-xs text-emerald-600 bg-emerald-500/10 border border-emerald-500/20 rounded-md p-2">
@@ -161,9 +245,20 @@ export default function Perfil() {
             )}
           </div>
 
-          <Button variant="outline" onClick={onResetPwd} className="w-full">
-            <KeyRound className="h-4 w-4 mr-2" /> Redefinir senha por e-mail
-          </Button>
+          <div className="space-y-2">
+            <Button variant="outline" onClick={onResetPwd} className="w-full">
+              <KeyRound className="h-4 w-4 mr-2" /> Redefinir senha por e-mail
+            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="w-full"><Download className="h-4 w-4 mr-2" /> Exportar meus dados</Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuItem onClick={onExportCSV}><FileText className="h-4 w-4 mr-2" /> Baixar CSV</DropdownMenuItem>
+                <DropdownMenuItem onClick={onExportPDF}><FileText className="h-4 w-4 mr-2" /> Baixar PDF</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </Card>
 
         {/* Coluna direita — formulário */}

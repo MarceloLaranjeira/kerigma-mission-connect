@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState, ReactNode } from "react
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { getAvatarUrl, clearAvatarCache } from "@/lib/avatarCache";
+import { logAccess } from "@/lib/accessLog";
 
 type Role = "admin" | "coordenador" | "editor" | "voluntario";
 type Status = "pendente" | "ativo" | "inativo";
@@ -59,11 +60,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
-    const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => {
+    const { data: sub } = supabase.auth.onAuthStateChange((event, s) => {
       setSession(s);
       setUser(s?.user ?? null);
       if (s?.user) {
         setTimeout(() => loadProfile(s.user.id), 0);
+        if (event === "SIGNED_IN") {
+          setTimeout(() => logAccess({ event: "login", resource: "auth", action: "signed_in" }), 0);
+        }
       } else {
         setProfile(null);
         setRoles([]);
@@ -88,7 +92,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       value={{
         user, session, profile, roles, loading,
         canEdit, isAdmin,
-        signOut: async () => { clearAvatarCache(); await supabase.auth.signOut(); },
+        signOut: async () => {
+          await logAccess({ event: "logout", resource: "auth", action: "sign_out" });
+          clearAvatarCache();
+          await supabase.auth.signOut();
+        },
         refresh: async () => { if (user) await loadProfile(user.id); },
       }}
     >
