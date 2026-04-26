@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { Loader2, Heart, Globe2, Waves, Sparkles } from "lucide-react";
+import { Loader2, Heart, Globe2, Waves, Sparkles, ShieldCheck, UserPlus, Crown, CheckCircle2, MailCheck, ArrowLeft } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import logo from "@/assets/logo-kerygma.png";
 import hero from "@/assets/missions-hero.jpg";
@@ -15,11 +15,12 @@ import hero from "@/assets/missions-hero.jpg";
 export default function Login() {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
-  const [tab, setTab] = useState("entrar");
+  const [tab, setTab] = useState<"entrar"|"cadastrar"|"recuperar">("entrar");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [busy, setBusy] = useState(false);
+  const [signupResult, setSignupResult] = useState<null | { needsConfirm: boolean; isFirst: boolean }>(null);
 
   if (!loading && user) return <Navigate to="/" replace />;
 
@@ -34,7 +35,10 @@ export default function Login() {
 
   const onSignup = async (e: React.FormEvent) => {
     e.preventDefault(); setBusy(true);
-    const { error } = await supabase.auth.signUp({
+    // detecta se é o primeiro cadastro (vira admin automaticamente)
+    const { count } = await supabase.from("profiles").select("id", { count: "exact", head: true });
+    const isFirst = (count ?? 0) === 0;
+    const { data, error } = await supabase.auth.signUp({
       email, password,
       options: {
         emailRedirectTo: `${window.location.origin}/`,
@@ -43,7 +47,18 @@ export default function Login() {
     });
     setBusy(false);
     if (error) return toast.error(error.message);
-    toast.success("Cadastro enviado! Aguarde aprovação de um coordenador.");
+    const needsConfirm = !data.session; // sem sessão = precisa confirmar email
+    setSignupResult({ needsConfirm, isFirst });
+  };
+
+  const onRecover = async (e: React.FormEvent) => {
+    e.preventDefault(); setBusy(true);
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    setBusy(false);
+    if (error) return toast.error(error.message);
+    toast.success("Enviamos um link para o seu e-mail.");
     setTab("entrar");
   };
 
@@ -95,38 +110,64 @@ export default function Login() {
       </div>
 
       {/* FORM */}
-      <div className="flex items-center justify-center p-6 sm:p-10">
+      <div className="flex items-center justify-center p-6 sm:p-10 overflow-y-auto">
         <Card className="w-full max-w-md p-8 bg-gradient-card border-border/60 shadow-elegant">
           <div className="lg:hidden flex items-center gap-2 mb-6">
             <img src={logo} alt="IBK" className="h-10 w-10" />
             <p className="font-bold">Kerygma Missões</p>
           </div>
 
+          {signupResult ? (
+            <SignupSuccess result={signupResult} onBack={() => { setSignupResult(null); setTab("entrar"); }} />
+          ) : (
+          <>
           <h2 className="text-2xl font-bold">Bem-vindo</h2>
           <p className="text-sm text-muted-foreground mb-6">
             Acesse o painel da Equipe de Missões da IBK.
           </p>
 
-          <Tabs value={tab} onValueChange={setTab}>
+          <Tabs value={tab} onValueChange={(v) => setTab(v as any)}>
             <TabsList className="grid grid-cols-2 w-full mb-4">
               <TabsTrigger value="entrar">Entrar</TabsTrigger>
               <TabsTrigger value="cadastrar">Cadastrar</TabsTrigger>
             </TabsList>
 
             <TabsContent value="entrar">
-              <form onSubmit={onLogin} className="space-y-3">
-                <div>
-                  <Label htmlFor="e1">E-mail</Label>
-                  <Input id="e1" type="email" required value={email} onChange={e=>setEmail(e.target.value)} />
-                </div>
-                <div>
-                  <Label htmlFor="p1">Senha</Label>
+              {tab === "recuperar" ? (
+                <form onSubmit={onRecover} className="space-y-3">
+                  <button type="button" onClick={() => setTab("entrar")} className="text-xs text-muted-foreground flex items-center gap-1 hover:text-foreground">
+                    <ArrowLeft className="h-3 w-3" /> voltar
+                  </button>
+                  <h3 className="font-semibold">Recuperar acesso</h3>
+                  <p className="text-xs text-muted-foreground">
+                    Informe o e-mail cadastrado e enviaremos um link para redefinir sua senha.
+                  </p>
+                  <div>
+                    <Label htmlFor="er">E-mail</Label>
+                    <Input id="er" type="email" required value={email} onChange={e=>setEmail(e.target.value)} />
+                  </div>
+                  <Button type="submit" disabled={busy} className="w-full bg-gradient-primary text-white shadow-elegant">
+                    {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : "Enviar link de recuperação"}
+                  </Button>
+                </form>
+              ) : (
+                <form onSubmit={onLogin} className="space-y-3">
+                  <div>
+                    <Label htmlFor="e1">E-mail</Label>
+                    <Input id="e1" type="email" required value={email} onChange={e=>setEmail(e.target.value)} />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="p1">Senha</Label>
+                    <button type="button" onClick={() => setTab("recuperar")} className="text-xs text-primary hover:underline">
+                      Esqueci minha senha
+                    </button>
+                  </div>
                   <Input id="p1" type="password" required minLength={6} value={password} onChange={e=>setPassword(e.target.value)} />
-                </div>
-                <Button type="submit" disabled={busy} className="w-full bg-gradient-primary text-white shadow-elegant">
-                  {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : "Entrar"}
-                </Button>
-              </form>
+                  <Button type="submit" disabled={busy} className="w-full bg-gradient-primary text-white shadow-elegant">
+                    {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : "Entrar"}
+                  </Button>
+                </form>
+              )}
             </TabsContent>
 
             <TabsContent value="cadastrar">
@@ -152,8 +193,93 @@ export default function Login() {
               </form>
             </TabsContent>
           </Tabs>
+
+          {/* Passo a passo */}
+          <div className="mt-8 pt-6 border-t border-border/60">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+              Como funciona o acesso
+            </p>
+            <ol className="space-y-3 text-sm">
+              <li className="flex gap-3">
+                <div className="h-7 w-7 rounded-full bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                  <Crown className="h-4 w-4" />
+                </div>
+                <div>
+                  <p className="font-medium">1. Primeiro cadastro vira Admin</p>
+                  <p className="text-xs text-muted-foreground">
+                    O <strong>primeiro</strong> usuário a se cadastrar é promovido automaticamente
+                    a Administrador da IBK.
+                  </p>
+                </div>
+              </li>
+              <li className="flex gap-3">
+                <div className="h-7 w-7 rounded-full bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                  <UserPlus className="h-4 w-4" />
+                </div>
+                <div>
+                  <p className="font-medium">2. Demais membros se auto-cadastram</p>
+                  <p className="text-xs text-muted-foreground">
+                    Cada membro do ministério usa a aba <strong>Cadastrar</strong> e fica como
+                    "pendente" até ser aprovado.
+                  </p>
+                </div>
+              </li>
+              <li className="flex gap-3">
+                <div className="h-7 w-7 rounded-full bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                  <ShieldCheck className="h-4 w-4" />
+                </div>
+                <div>
+                  <p className="font-medium">3. Admin aprova em "Equipe"</p>
+                  <p className="text-xs text-muted-foreground">
+                    No menu <strong>Equipe</strong>, o Admin aprova pendentes e define o papel
+                    (Coordenador, Editor ou Voluntário).
+                  </p>
+                </div>
+              </li>
+            </ol>
+          </div>
+          </>
+          )}
         </Card>
       </div>
+    </div>
+  );
+}
+
+function SignupSuccess({ result, onBack }: { result: { needsConfirm: boolean; isFirst: boolean }; onBack: () => void }) {
+  return (
+    <div className="text-center py-4">
+      {result.needsConfirm ? (
+        <>
+          <MailCheck className="h-14 w-14 mx-auto text-primary mb-4" />
+          <h2 className="text-xl font-bold">Confirme seu e-mail</h2>
+          <p className="text-sm text-muted-foreground mt-2">
+            Enviamos um link de confirmação para o seu e-mail. Após confirmar, você poderá entrar
+            no painel.
+          </p>
+        </>
+      ) : result.isFirst ? (
+        <>
+          <Crown className="h-14 w-14 mx-auto text-primary mb-4" />
+          <h2 className="text-xl font-bold">Você é o Administrador!</h2>
+          <p className="text-sm text-muted-foreground mt-2">
+            Como primeiro membro cadastrado, você foi promovido a <strong>Administrador</strong> do
+            ministério. Já pode entrar e aprovar os próximos membros em <strong>Equipe</strong>.
+          </p>
+        </>
+      ) : (
+        <>
+          <CheckCircle2 className="h-14 w-14 mx-auto text-primary mb-4" />
+          <h2 className="text-xl font-bold">Cadastro recebido</h2>
+          <p className="text-sm text-muted-foreground mt-2">
+            Seu cadastro está <strong>pendente de aprovação</strong>. Um Coordenador ou
+            Administrador da IBK vai liberar seu acesso em breve.
+          </p>
+        </>
+      )}
+      <Button onClick={onBack} className="mt-6 w-full bg-gradient-primary text-white">
+        Ir para o login
+      </Button>
     </div>
   );
 }
