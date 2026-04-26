@@ -48,7 +48,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       supabase.from("profiles").select("*").eq("id", uid).maybeSingle(),
       supabase.from("user_roles").select("role").eq("user_id", uid),
     ]);
-    setProfile(p as any);
+    let prof: any = p;
+    if (prof?.avatar_url && !/^https?:\/\//.test(prof.avatar_url)) {
+      // avatar_url is a storage path — resolve a signed URL for display
+      const { data: signed } = await supabase.storage
+        .from("avatars")
+        .createSignedUrl(prof.avatar_url, 60 * 60);
+      if (signed?.signedUrl) prof = { ...prof, avatar_url: signed.signedUrl };
+    }
+    setProfile(prof);
     setRoles((r ?? []).map((x: any) => x.role));
   };
 
