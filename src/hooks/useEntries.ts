@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { showError } from "@/lib/errors";
 
 export type EntryType =
   | "locais" | "ribeirinhas" | "nacionais" | "mundiais"
@@ -30,7 +31,7 @@ export function useEntries(type: EntryType) {
     const { data, error } = await supabase
       .from("entries").select("*").eq("type", type)
       .order("created_at", { ascending: false });
-    if (error) toast.error(error.message);
+    if (error) showError(error, "Não foi possível carregar os registros.");
     else setItems((data ?? []) as Entry[]);
     setLoading(false);
   }, [type]);
@@ -39,21 +40,21 @@ export function useEntries(type: EntryType) {
 
   const create = async (payload: Partial<Entry>) => {
     const { error } = await supabase.from("entries").insert({ ...payload, type } as any);
-    if (error) { toast.error(error.message); return false; }
+    if (error) { showError(error, "Não foi possível criar o registro."); return false; }
     toast.success("Registro criado");
     await load(); return true;
   };
 
   const update = async (id: string, payload: Partial<Entry>) => {
     const { error } = await supabase.from("entries").update(payload as any).eq("id", id);
-    if (error) { toast.error(error.message); return false; }
+    if (error) { showError(error, "Não foi possível atualizar o registro."); return false; }
     toast.success("Registro atualizado");
     await load(); return true;
   };
 
   const remove = async (id: string) => {
     const { error } = await supabase.from("entries").delete().eq("id", id);
-    if (error) { toast.error(error.message); return false; }
+    if (error) { showError(error, "Não foi possível excluir o registro."); return false; }
     toast.success("Registro excluído");
     await load(); return true;
   };

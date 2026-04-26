@@ -9,7 +9,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
-import { friendlyError } from "@/lib/errors";
+import { showError } from "@/lib/errors";
+import { getAvatarUrls } from "@/lib/avatarCache";
 import { Users, Search, Check, X, Loader2, ShieldCheck } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
@@ -50,20 +51,18 @@ export default function Equipe() {
       supabase.from("profiles").select("id,full_name,email,avatar_url,status,ministry_role,ministry_area,phone").order("created_at", { ascending: false }),
       supabase.from("user_roles").select("user_id,role"),
     ]);
-    if (e1 || e2) toast.error(friendlyError(e1 || e2, "Não foi possível carregar os membros."));
+    if (e1 || e2) showError(e1 || e2, "Não foi possível carregar os membros.");
     const map = new Map<string, Role[]>();
     (rs ?? []).forEach((r: any) => {
       const arr = map.get(r.user_id) ?? [];
       arr.push(r.role); map.set(r.user_id, arr);
     });
-    // Resolve signed URLs for any avatars stored as paths (private bucket)
-    const list = await Promise.all((ps ?? []).map(async (p: any) => {
-      let avatar = p.avatar_url;
-      if (avatar && !/^https?:\/\//.test(avatar)) {
-        const { data: signed } = await supabase.storage.from("avatars").createSignedUrl(avatar, 60 * 60);
-        avatar = signed?.signedUrl ?? null;
-      }
-      return { ...p, avatar_url: avatar, roles: map.get(p.id) ?? [] };
+    // Resolve signed URLs in parallel via the cached helper (avoids duplicate sign calls).
+    const signedUrls = await getAvatarUrls((ps ?? []).map((p: any) => p.avatar_url));
+    const list = (ps ?? []).map((p: any, i: number) => ({
+      ...p,
+      avatar_url: signedUrls[i],
+      roles: map.get(p.id) ?? [],
     }));
     setMembers(list);
     setLoading(false);
@@ -72,7 +71,7 @@ export default function Equipe() {
 
   const updateStatus = async (m: Member, status: Status) => {
     const { error } = await supabase.from("profiles").update({ status }).eq("id", m.id);
-    if (error) return toast.error(friendlyError(error, "Não foi possível atualizar o status."));
+    if (error) return showError(error, "Não foi possível atualizar o status.");
     toast.success("Status atualizado");
     load();
   };
@@ -80,9 +79,9 @@ export default function Equipe() {
   const setPrimaryRole = async (m: Member, role: Role) => {
     // remove papéis existentes e adiciona o novo
     const { error: e1 } = await supabase.from("user_roles").delete().eq("user_id", m.id);
-    if (e1) return toast.error(friendlyError(e1, "Não foi possível atualizar o papel."));
+    if (e1) return showError(e1, "Não foi possível atualizar o papel.");
     const { error: e2 } = await supabase.from("user_roles").insert({ user_id: m.id, role });
-    if (e2) return toast.error(friendlyError(e2, "Não foi possível atualizar o papel."));
+    if (e2) return showError(e2, "Não foi possível atualizar o papel.");
     toast.success("Papel atualizado");
     load();
   };
@@ -90,13 +89,13 @@ export default function Equipe() {
   const updateRoleField = async (m: Member, field: "ministry_role" | "ministry_area", val: string) => {
     const update: any = { [field]: val };
     const { error } = await supabase.from("profiles").update(update).eq("id", m.id);
-    if (error) return toast.error(friendlyError(error, "Não foi possível salvar."));
+    if (error) return showError(error, "Não foi possível salvar.");
     load();
   };
 
   const removeMember = async (m: Member) => {
     const { error } = await supabase.from("profiles").delete().eq("id", m.id);
-    if (error) return toast.error(friendlyError(error, "Não foi possível remover o membro."));
+    if (error) return showError(error, "Não foi possível remover o membro.");
     toast.success("Membro removido");
     setConfirmDel(null); load();
   };

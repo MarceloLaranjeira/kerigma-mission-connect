@@ -1,3 +1,5 @@
+import { toast } from "sonner";
+
 /**
  * Maps backend errors to safe, user-friendly messages.
  * Raw error details are logged to the console for debugging only.
@@ -26,3 +28,12 @@ export function friendlyError(error: unknown, fallback = "Ocorreu um erro. Tente
 
   return fallback;
 }
+
+/**
+ * Centralized error toast. Always renders a generic, safe message —
+ * never exposes raw `error.message` from the backend to end users.
+ */
+export function showError(error: unknown, fallback?: string): void {
+  toast.error(friendlyError(error, fallback));
+}
+
