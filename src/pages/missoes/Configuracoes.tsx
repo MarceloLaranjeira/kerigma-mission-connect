@@ -10,6 +10,7 @@ import { Settings, LogOut, Save, Loader2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { friendlyError } from "@/lib/errors";
 
 export default function Configuracoes() {
   const { user, profile, refresh, signOut } = useAuth();
@@ -48,7 +49,7 @@ export default function Configuracoes() {
       gifts: form.gifts || null,
     }).eq("id", user.id);
     setBusy(false);
-    if (error) return toast.error(error.message);
+    if (error) return toast.error(friendlyError(error, "Não foi possível salvar."));
     toast.success("Perfil atualizado");
     refresh();
   };
