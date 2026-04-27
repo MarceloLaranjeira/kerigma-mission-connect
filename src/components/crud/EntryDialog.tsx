@@ -78,6 +78,10 @@ export function EntryDialog({ open, onOpenChange, initial, onSubmit, title }: Pr
               <Input placeholder="Próx: 28/04, R$ 4.820…" value={form.meta} onChange={e=>setForm({...form,meta:e.target.value})} />
             </div>
           </div>
+          <div>
+            <Label>Status interno</Label>
+            <Input placeholder="Em andamento, Concluído, Em oração..." value={form.status} onChange={e=>setForm({...form,status:e.target.value})} />
+          </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
               <Label>Data</Label>

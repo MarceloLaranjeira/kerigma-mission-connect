@@ -13,11 +13,12 @@ interface CampaignFormDialogProps {
   open: boolean;
   onOpenChange: (value: boolean) => void;
   initial?: CampaignWithOwner | null;
+  defaultFront?: TablesInsert<"crm_campaigns">["front"];
   profiles: SimpleProfile[];
   onSubmit: (payload: TablesInsert<"crm_campaigns"> | TablesUpdate<"crm_campaigns">) => Promise<boolean>;
 }
 
-export function CampaignFormDialog({ open, onOpenChange, initial, profiles, onSubmit }: CampaignFormDialogProps) {
+export function CampaignFormDialog({ open, onOpenChange, initial, defaultFront, profiles, onSubmit }: CampaignFormDialogProps) {
   const [busy, setBusy] = useState(false);
   const [form, setForm] = useState({
     title: "",
@@ -36,13 +37,13 @@ export function CampaignFormDialog({ open, onOpenChange, initial, profiles, onSu
       title: initial?.title ?? "",
       description: initial?.description ?? "",
       status: initial?.status ?? "rascunho",
-      front: initial?.front ?? "geral",
+      front: initial?.front ?? defaultFront ?? "geral",
       starts_at: formatDateInput(initial?.starts_at),
       ends_at: formatDateInput(initial?.ends_at),
       goal_amount: initial?.goal_amount?.toString() ?? "",
       owner_user_id: initial?.owner_user_id ?? "",
     });
-  }, [initial, open]);
+  }, [defaultFront, initial, open]);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();

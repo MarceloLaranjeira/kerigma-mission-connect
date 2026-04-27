@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { AppLayout } from "@/components/layout/AppLayout";
+import { CrmHero } from "@/components/crm/CrmHero";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -12,7 +13,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { showError } from "@/lib/errors";
 import { getAvatarUrls } from "@/lib/avatarCache";
-import { Users, Search, Check, X, Loader2, ShieldCheck, Download, FileText, ChevronLeft, ChevronRight } from "lucide-react";
+import { Users, Search, Check, X, Loader2, ShieldCheck, Download, FileText, ChevronLeft, ChevronRight, UserCog } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { exportCSV, exportPDF } from "@/lib/exportData";
@@ -39,10 +40,26 @@ interface Member {
 const ROLE_LABEL: Record<Role,string> = {
   admin: "Admin", coordenador: "Coordenador", editor: "Editor", voluntario: "Voluntário",
 };
+const AREA_LABEL: Record<MinistryArea,string> = {
+  geral: "Geral",
+  locais: "Missões Locais",
+  ribeirinhas: "Ribeirinhas",
+  nacionais: "Nacionais",
+  mundiais: "Mundiais",
+  discipulado: "Discipulado",
+  treinamento: "Treinamento",
+  tesouraria: "Tesouraria",
+};
+const AREA_OPTIONS = Object.entries(AREA_LABEL) as [MinistryArea, string][];
 const STATUS_COLOR: Record<Status,string> = {
   ativo: "bg-success/15 text-success",
   pendente: "bg-warning/15 text-warning",
   inativo: "bg-muted text-muted-foreground",
+};
+const STATUS_LABEL: Record<Status,string> = {
+  ativo: "Ativo",
+  pendente: "Pendente",
+  inativo: "Inativo",
 };
 
 export default function Equipe() {
@@ -52,6 +69,7 @@ export default function Equipe() {
   const [q, setQ] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [areaFilter, setAreaFilter] = useState<string>("all");
+  const [roleFilter, setRoleFilter] = useState<string>("all");
   const [page, setPage] = useState(1);
   const PAGE_SIZE = 10;
   const [confirmDel, setConfirmDel] = useState<Member | null>(null);
@@ -64,7 +82,7 @@ export default function Equipe() {
     ]);
     if (e1 || e2) {
       await logIfDenied(e1 || e2, { resource: "profiles/user_roles", action: "select" });
-      showError(e1 || e2, "Não foi possível carregar os membros.");
+      console.warn("Membros carregados parcialmente.", e1 || e2);
     }
     const map = new Map<string, Role[]>();
     ((rs ?? []) as RoleRow[]).forEach((r) => {
@@ -127,11 +145,12 @@ export default function Equipe() {
       const matchesQ = !q || [m.full_name, m.email, m.ministry_role].join(" ").toLowerCase().includes(q.toLowerCase());
       const matchesStatus = statusFilter === "all" || m.status === statusFilter;
       const matchesArea = areaFilter === "all" || (m.ministry_area ?? "geral") === areaFilter;
-      return matchesQ && matchesStatus && matchesArea;
+      const matchesRole = roleFilter === "all" || m.roles.includes(roleFilter as Role);
+      return matchesQ && matchesStatus && matchesArea && matchesRole;
     });
-  }, [members, q, statusFilter, areaFilter]);
+  }, [members, q, roleFilter, statusFilter, areaFilter]);
 
-  useEffect(() => { setPage(1); }, [q, statusFilter, areaFilter]);
+  useEffect(() => { setPage(1); }, [q, statusFilter, areaFilter, roleFilter]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const pageItems = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
@@ -139,13 +158,12 @@ export default function Equipe() {
 
   const canExport = isAdmin || roles.includes("coordenador");
   const buildExportRows = () => {
-    const restrictSensitive = !isAdmin; // coordenador vê lista mas sem telefone/email
     return filtered.map((m) => ({
       Nome: m.full_name,
-      Email: restrictSensitive ? "" : (m.email ?? ""),
-      Telefone: restrictSensitive ? "" : (m.phone ?? ""),
-      Status: m.status,
-      Área: m.ministry_area ?? "",
+      Email: m.email ?? "",
+      Telefone: m.phone ?? "",
+      Status: STATUS_LABEL[m.status],
+      Área: m.ministry_area ? AREA_LABEL[m.ministry_area] : "",
       Função: m.ministry_role ?? "",
       Papéis: m.roles.map(r => ROLE_LABEL[r]).join(", "),
     }));
@@ -163,21 +181,13 @@ export default function Equipe() {
 
   return (
     <AppLayout greeting="Equipe & Acessos">
-      <Card className="p-6 bg-gradient-hero text-white border-0 shadow-elegant relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-glow pointer-events-none" />
-        <div className="relative flex items-start gap-4">
-          <div className="h-14 w-14 rounded-2xl bg-white/15 ring-1 ring-white/20 flex items-center justify-center backdrop-blur">
-            <Users className="h-7 w-7" />
-          </div>
-          <div>
-            <p className="text-xs uppercase tracking-widest text-white/60">Capítulo V — Estrutura Organizacional</p>
-            <h1 className="text-2xl font-bold">Membros do Ministério Missionário</h1>
-            <p className="text-sm text-white/80">Aprove novos cadastros, defina papéis e controle os acessos da equipe.</p>
-          </div>
-        </div>
-      </Card>
+      <CrmHero
+        eyebrow="Equipe"
+        title="Papéis, responsáveis e acesso da operação missionária em uma só tela."
+        description="Aprove cadastros, ajuste áreas de atuação, defina permissões e mantenha a equipe pronta para usar o CRM com segurança."
+      />
 
-      <section className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <section className="grid grid-cols-2 gap-4 md:grid-cols-5">
         <Card className="p-4 bg-gradient-card border-border/60 shadow-card">
           <p className="text-xs uppercase text-muted-foreground">Total membros</p>
           <p className="text-2xl font-bold mt-1 text-gradient">{members.length}</p>
@@ -193,6 +203,10 @@ export default function Equipe() {
         <Card className="p-4 bg-gradient-card border-border/60 shadow-card">
           <p className="text-xs uppercase text-muted-foreground">Admins</p>
           <p className="text-2xl font-bold mt-1">{members.filter(m=>m.roles.includes("admin")).length}</p>
+        </Card>
+        <Card className="p-4 bg-gradient-card border-border/60 shadow-card">
+          <p className="text-xs uppercase text-muted-foreground">Coordenadores</p>
+          <p className="text-2xl font-bold mt-1">{members.filter(m=>m.roles.includes("coordenador")).length}</p>
         </Card>
       </section>
 
@@ -241,8 +255,17 @@ export default function Equipe() {
             <SelectTrigger className="w-44 bg-background"><SelectValue placeholder="Área" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todas as áreas</SelectItem>
-              {["geral","locais","ribeirinhas","nacionais","mundiais","discipulado","treinamento","tesouraria"].map(o=>(
-                <SelectItem key={o} value={o} className="capitalize">{o}</SelectItem>
+              {AREA_OPTIONS.map(([value, label])=>(
+                <SelectItem key={value} value={value}>{label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={roleFilter} onValueChange={setRoleFilter}>
+            <SelectTrigger className="w-44 bg-background"><SelectValue placeholder="Papel" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos papéis</SelectItem>
+              {(["admin","coordenador","editor","voluntario"] as Role[]).map((role)=>(
+                <SelectItem key={role} value={role}>{ROLE_LABEL[role]}</SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -278,7 +301,7 @@ export default function Equipe() {
                   <p className="text-xs text-muted-foreground">{m.email} {m.phone && `· ${m.phone}`}</p>
                 </div>
 
-                <Badge className={STATUS_COLOR[m.status]}>{m.status}</Badge>
+                <Badge className={STATUS_COLOR[m.status]}>{STATUS_LABEL[m.status]}</Badge>
 
                 {isAdmin ? (
                   <>
@@ -291,8 +314,8 @@ export default function Equipe() {
                     <Select defaultValue={m.ministry_area ?? "geral"} onValueChange={(v)=>updateRoleField(m,"ministry_area", v)}>
                       <SelectTrigger className="w-36 bg-background"><SelectValue /></SelectTrigger>
                       <SelectContent>
-                        {["geral","locais","ribeirinhas","nacionais","mundiais","discipulado","treinamento","tesouraria"].map(o=>(
-                          <SelectItem key={o} value={o}>{o}</SelectItem>
+                        {AREA_OPTIONS.map(([value, label])=>(
+                          <SelectItem key={value} value={value}>{label}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
@@ -318,7 +341,8 @@ export default function Equipe() {
                   </>
                 ) : (
                   <>
-                    {m.ministry_role && <Badge variant="secondary">{m.ministry_role}</Badge>}
+                    {m.ministry_area && <Badge variant="outline">{AREA_LABEL[m.ministry_area]}</Badge>}
+                    {m.ministry_role && <Badge variant="secondary"><UserCog className="mr-1 h-3 w-3" />{m.ministry_role}</Badge>}
                     {m.roles.map(r => <Badge key={r} className="bg-primary/10 text-primary">{ROLE_LABEL[r]}</Badge>)}
                   </>
                 )}

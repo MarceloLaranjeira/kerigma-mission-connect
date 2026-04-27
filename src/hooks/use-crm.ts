@@ -91,7 +91,8 @@ function useLoadable<T>(loader: () => Promise<T[]>, deps: unknown[] = []): Resou
     try {
       setItems(await loader());
     } catch (error) {
-      toast.error(friendlyError(error));
+      console.warn("Recurso carregado parcialmente.", error);
+      setItems([]);
     } finally {
       setLoading(false);
     }
@@ -125,7 +126,11 @@ export function useCrmLookups() {
       setSources(sourcesData);
       setCategories(categoriesData);
     } catch (error) {
-      toast.error(friendlyError(error, "Não foi possível carregar as opções do CRM."));
+      console.warn("Opções do CRM carregadas parcialmente.", error);
+      setProfiles([]);
+      setStages([]);
+      setSources([]);
+      setCategories([]);
     } finally {
       setLoading(false);
     }
@@ -168,7 +173,8 @@ export function useCrmPeople() {
         pipeline_card: cardMap.get(person.id) ?? null,
       })));
     } catch (error) {
-      toast.error(friendlyError(error, "Não foi possível carregar as pessoas."));
+      console.warn("Pessoas carregadas parcialmente.", error);
+      setItems([]);
     } finally {
       setLoading(false);
     }
@@ -268,7 +274,9 @@ export function useCrmPipeline() {
         assigned_user: card.assigned_user_id ? profileMap.get(card.assigned_user_id) ?? null : null,
       })));
     } catch (error) {
-      toast.error(friendlyError(error, "Não foi possível carregar o pipeline."));
+      console.warn("Pipeline carregado parcialmente.", error);
+      setStages([]);
+      setCards([]);
     } finally {
       setLoading(false);
     }
@@ -300,6 +308,14 @@ export function useCrmPipeline() {
       toast.error(friendlyError(error, "Não foi possível atualizar o card."));
       return false;
     }
+    const currentCard = cards.find((card) => card.id === id);
+    if (payload.stage_id && currentCard?.person_id) {
+      const { error: personError } = await supabase.from("crm_people").update({ current_stage_id: payload.stage_id }).eq("id", currentCard.person_id);
+      if (personError) {
+        toast.error(friendlyError(personError, "Card atualizado, mas a etapa da pessoa não foi sincronizada."));
+        return false;
+      }
+    }
     toast.success("Card atualizado.");
     await reload();
     return true;
@@ -329,7 +345,8 @@ export function useCrmInteractions() {
         responsible_user: item.responsible_user_id ? profileMap.get(item.responsible_user_id) ?? null : null,
       })));
     } catch (err) {
-      toast.error(friendlyError(err, "Não foi possível carregar as atividades."));
+      console.warn("Atividades carregadas parcialmente.", err);
+      setItems([]);
     } finally {
       setLoading(false);
     }
@@ -385,7 +402,8 @@ export function useCrmTasks() {
         responsible_user: task.responsible_user_id ? profileMap.get(task.responsible_user_id) ?? null : null,
       })));
     } catch (err) {
-      toast.error(friendlyError(err, "Não foi possível carregar as tarefas."));
+      console.warn("Tarefas carregadas parcialmente.", err);
+      setItems([]);
     } finally {
       setLoading(false);
     }
@@ -449,7 +467,8 @@ export function useCrmEvents() {
         responsible_user: event.responsible_user_id ? profileMap.get(event.responsible_user_id) ?? null : null,
       })));
     } catch (err) {
-      toast.error(friendlyError(err, "Não foi possível carregar a agenda."));
+      console.warn("Agenda carregada parcialmente.", err);
+      setItems([]);
     } finally {
       setLoading(false);
     }
@@ -506,14 +525,19 @@ export function useCrmCampaigns() {
         supabase.from("crm_campaigns").select("*").order("created_at", { ascending: false }),
         loadProfiles(),
       ]);
-      if (error) throw error;
+      if (error) {
+        console.warn("Campanhas carregadas parcialmente.", error);
+        setItems([]);
+        return;
+      }
       const profileMap = new Map(profiles.map((profile) => [profile.id, profile]));
       setItems(((campaigns ?? []) as CrmCampaign[]).map((campaign) => ({
         ...campaign,
         owner_user: campaign.owner_user_id ? profileMap.get(campaign.owner_user_id) ?? null : null,
       })));
     } catch (err) {
-      toast.error(friendlyError(err, "Não foi possível carregar as campanhas."));
+      console.warn("Não foi possível carregar as campanhas.", err);
+      setItems([]);
     } finally {
       setLoading(false);
     }
@@ -565,25 +589,41 @@ export function useCrmFinancial() {
 
   const reload = useCallback(async () => {
     setLoading(true);
+    const [entriesResult, categoriesResult, campaignsResult, profilesResult] = await Promise.allSettled([
+      supabase.from("crm_financial_entries").select("*").order("entry_date", { ascending: false }),
+      loadFinancialCategories(),
+      supabase.from("crm_campaigns").select("*"),
+      loadProfiles(),
+    ]);
     try {
-      const [{ data: entries, error }, categories, { data: campaigns, error: campaignsError }, profiles] = await Promise.all([
-        supabase.from("crm_financial_entries").select("*").order("entry_date", { ascending: false }),
-        loadFinancialCategories(),
-        supabase.from("crm_campaigns").select("*"),
-        loadProfiles(),
-      ]);
-      if (error || campaignsError) throw error || campaignsError;
+      const entries = entriesResult.status === "fulfilled" && !entriesResult.value.error
+        ? (entriesResult.value.data ?? []) as CrmFinancialEntry[]
+        : [];
+      const categories = categoriesResult.status === "fulfilled" ? categoriesResult.value : [];
+      const campaigns = campaignsResult.status === "fulfilled" && !campaignsResult.value.error
+        ? (campaignsResult.value.data ?? []) as CrmCampaign[]
+        : [];
+      const profiles = profilesResult.status === "fulfilled" ? profilesResult.value : [];
+      if (entriesResult.status === "rejected" || (entriesResult.status === "fulfilled" && entriesResult.value.error)) {
+        console.warn("Lançamentos financeiros carregados parcialmente.", entriesResult.status === "fulfilled" ? entriesResult.value.error : entriesResult.reason);
+      }
+      if (campaignsResult.status === "rejected" || (campaignsResult.status === "fulfilled" && campaignsResult.value.error)) {
+        console.warn("Campanhas do financeiro carregadas parcialmente.", campaignsResult.status === "fulfilled" ? campaignsResult.value.error : campaignsResult.reason);
+      }
+      if (categoriesResult.status === "rejected") console.warn("Categorias financeiras carregadas parcialmente.", categoriesResult.reason);
+      if (profilesResult.status === "rejected") console.warn("Responsáveis do financeiro carregados parcialmente.", profilesResult.reason);
       const categoryMap = new Map(categories.map((category) => [category.id, category]));
-      const campaignMap = new Map(((campaigns ?? []) as CrmCampaign[]).map((campaign) => [campaign.id, campaign]));
+      const campaignMap = new Map(campaigns.map((campaign) => [campaign.id, campaign]));
       const profileMap = new Map(profiles.map((profile) => [profile.id, profile]));
-      setItems(((entries ?? []) as CrmFinancialEntry[]).map((entry) => ({
+      setItems(entries.map((entry) => ({
         ...entry,
         category: entry.category_id ? categoryMap.get(entry.category_id) ?? null : null,
         campaign: entry.campaign_id ? campaignMap.get(entry.campaign_id) ?? null : null,
         responsible_user: entry.responsible_user_id ? profileMap.get(entry.responsible_user_id) ?? null : null,
       })));
     } catch (err) {
-      toast.error(friendlyError(err, "Não foi possível carregar o financeiro."));
+      console.warn("Não foi possível carregar o financeiro.", err);
+      setItems([]);
     } finally {
       setLoading(false);
     }
@@ -635,14 +675,14 @@ export function useCrmDashboard() {
     setLoading(true);
     try {
       const [
-        { data: people, error: peopleError },
-        { data: stages, error: stageError },
-        { data: cards, error: cardError },
-        { data: tasks, error: taskError },
-        { data: interactions, error: interactionError },
-        { data: events, error: eventError },
-        { data: campaigns, error: campaignError },
-        { data: financial, error: financialError },
+        peopleResult,
+        stagesResult,
+        cardsResult,
+        tasksResult,
+        interactionsResult,
+        eventsResult,
+        campaignsResult,
+        financialResult,
       ] = await Promise.all([
         supabase.from("crm_people").select("*"),
         supabase.from("crm_stages").select("*").order("position", { ascending: true }),
@@ -653,21 +693,31 @@ export function useCrmDashboard() {
         supabase.from("crm_campaigns").select("*"),
         supabase.from("crm_financial_entries").select("*").order("entry_date", { ascending: false }).limit(24),
       ]);
-      if (peopleError || stageError || cardError || taskError || interactionError || eventError || campaignError || financialError) {
-        throw peopleError || stageError || cardError || taskError || interactionError || eventError || campaignError || financialError;
+      const errors = [
+        peopleResult.error,
+        stagesResult.error,
+        cardsResult.error,
+        tasksResult.error,
+        interactionsResult.error,
+        eventsResult.error,
+        campaignsResult.error,
+        financialResult.error,
+      ].filter(Boolean);
+      if (errors.length > 0) {
+        console.warn("Dashboard carregado parcialmente.", errors);
       }
       setData({
-        people: (people ?? []) as CrmPerson[],
-        stages: (stages ?? []) as CrmStage[],
-        cards: (cards ?? []) as CrmPipelineCard[],
-        tasks: (tasks ?? []) as CrmTask[],
-        interactions: (interactions ?? []) as CrmInteraction[],
-        events: (events ?? []) as CrmEvent[],
-        campaigns: (campaigns ?? []) as CrmCampaign[],
-        financial: (financial ?? []) as CrmFinancialEntry[],
+        people: (peopleResult.data ?? []) as CrmPerson[],
+        stages: (stagesResult.data ?? []) as CrmStage[],
+        cards: (cardsResult.data ?? []) as CrmPipelineCard[],
+        tasks: (tasksResult.data ?? []) as CrmTask[],
+        interactions: (interactionsResult.data ?? []) as CrmInteraction[],
+        events: (eventsResult.data ?? []) as CrmEvent[],
+        campaigns: (campaignsResult.data ?? []) as CrmCampaign[],
+        financial: (financialResult.data ?? []) as CrmFinancialEntry[],
       });
     } catch (error) {
-      toast.error(friendlyError(error, "Não foi possível carregar o dashboard."));
+      console.warn("Não foi possível carregar o dashboard.", error);
     } finally {
       setLoading(false);
     }
@@ -679,14 +729,23 @@ export function useCrmDashboard() {
 
   const metrics = useMemo(() => {
     const pipelineMap = new Map(data.stages.map((stage) => [stage.id, stage]));
-    const upcomingTasks = data.tasks.filter((task) => task.status !== "concluida").length;
+    const now = new Date();
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+    const monthFinancial = data.financial.filter((entry) => {
+      const entryDate = new Date(entry.entry_date);
+      return entryDate >= monthStart && entryDate < monthEnd;
+    });
+    const upcomingTasks = data.tasks.filter((task) => isTaskOpen(task.status)).length;
+    const overdueTasks = data.tasks.filter((task) => task.due_at && isTaskOpen(task.status) && new Date(task.due_at) < now).length;
+    const nextActionsDue = data.cards.filter((card) => card.next_action_at && new Date(card.next_action_at) < now).length;
     const peopleInDiscipleship = data.people.filter((person) => person.lifecycle_status === "discipulado").length;
     const activeCampaigns = data.campaigns.filter((campaign) => campaign.status === "ativa").length;
     const visitors = data.people.filter((person) => person.lifecycle_status === "visitante").length;
-    const monthIncome = data.financial
+    const monthIncome = monthFinancial
       .filter((entry) => entry.type === "entrada")
       .reduce((sum, entry) => sum + Number(entry.amount ?? 0), 0);
-    const monthExpense = data.financial
+    const monthExpense = monthFinancial
       .filter((entry) => entry.type === "saida")
       .reduce((sum, entry) => sum + Number(entry.amount ?? 0), 0);
     const pipelineSummary = data.cards.reduce<Record<string, number>>((acc, card) => {
@@ -700,6 +759,8 @@ export function useCrmDashboard() {
       peopleInDiscipleship,
       activeCampaigns,
       visitors,
+      overdueTasks,
+      nextActionsDue,
       monthIncome,
       monthExpense,
       pipelineSummary,
@@ -736,7 +797,18 @@ export function useCrmSettings() {
     return true;
   };
 
-  return { stages, sources, categories, createStage, createSource };
+  const createCategory = async (payload: TablesInsert<"crm_financial_categories">) => {
+    const { error } = await supabase.from("crm_financial_categories").insert(payload);
+    if (error) {
+      toast.error(friendlyError(error, "Não foi possível criar a categoria."));
+      return false;
+    }
+    toast.success("Categoria criada.");
+    await categories.reload();
+    return true;
+  };
+
+  return { stages, sources, categories, createStage, createSource, createCategory };
 }
 
 export type LookupOption = { id: string; label: string };

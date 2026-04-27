@@ -1,17 +1,45 @@
 import { useState } from "react";
-import { Plus, Settings } from "lucide-react";
+import { Database, Plus, Settings } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { CrmHero } from "@/components/crm/CrmHero";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useAuth } from "@/contexts/AuthContext";
 import { useCrmSettings } from "@/hooks/use-crm";
+import { seedDemoData } from "@/lib/demoData";
+import { friendlyError } from "@/lib/errors";
+import { toast } from "sonner";
 
 export default function SettingsPage() {
-  const { stages, sources, categories, createStage, createSource } = useCrmSettings();
+  const { canEdit, user } = useAuth();
+  const { stages, sources, categories, createStage, createSource, createCategory } = useCrmSettings();
   const [stageForm, setStageForm] = useState({ name: "", slug: "", color: "#2563eb", position: "1" });
   const [sourceForm, setSourceForm] = useState({ name: "", kind: "manual" });
+  const [categoryForm, setCategoryForm] = useState({ name: "", color: "#2563eb", sort_order: "1" });
+  const [seeding, setSeeding] = useState(false);
+
+  const handleSeedDemo = async () => {
+    if (!user) {
+      toast.error("Entre com um usuário ativo para carregar os dados fictícios.");
+      return;
+    }
+    setSeeding(true);
+    try {
+      const summary = await seedDemoData(user.id);
+      if (summary.skipped) {
+        toast.info("Os dados fictícios já foram carregados neste ambiente.");
+      } else {
+        toast.success(`Cenários criados: ${summary.people} pessoas, ${summary.campaigns} campanhas, ${summary.events} eventos e ${summary.missionEntries} registros missionários.`);
+        await Promise.all([stages.reload(), sources.reload(), categories.reload()]);
+      }
+    } catch (error) {
+      toast.error(friendlyError(error, "Não foi possível carregar os cenários fictícios."));
+    } finally {
+      setSeeding(false);
+    }
+  };
 
   return (
     <AppLayout greeting="Configurações CRM">
@@ -19,7 +47,30 @@ export default function SettingsPage() {
         eyebrow="Configurações"
         title="Estrutura viva do CRM para pipeline, origens e categorias."
         description="Nesta primeira versão, a configuração cobre as bases que alimentam o fluxo operacional: etapas, origens e categorias financeiras."
+        actions={canEdit ? (
+          <Button className="bg-white text-primary hover:bg-white/90" onClick={handleSeedDemo} disabled={seeding}>
+            <Database className="mr-2 h-4 w-4" /> {seeding ? "Carregando..." : "Carregar dados fictícios"}
+          </Button>
+        ) : null}
       />
+
+      <Card className="border-border/60 bg-gradient-card p-5 shadow-card">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h3 className="font-semibold">Cenários fictícios editáveis</h3>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Cria pessoas, cards de pipeline, tarefas, atividades, campanhas, eventos, financeiro e registros de Missões usando as permissões reais do usuário logado.
+            </p>
+          </div>
+          {canEdit ? (
+            <Button variant="outline" onClick={handleSeedDemo} disabled={seeding}>
+              <Database className="mr-2 h-4 w-4" /> {seeding ? "Carregando..." : "Gerar demonstração"}
+            </Button>
+          ) : (
+            <p className="text-sm text-muted-foreground">Somente administradores, coordenadores e editores ativos podem gerar estes dados.</p>
+          )}
+        </div>
+      </Card>
 
       <section className="grid gap-4 xl:grid-cols-2">
         <Card className="border-border/60 bg-gradient-card p-5 shadow-card">
@@ -106,6 +157,29 @@ export default function SettingsPage() {
             </div>
           ))}
         </div>
+        <form className="mt-5 grid gap-3 md:grid-cols-3" onSubmit={async (event) => {
+          event.preventDefault();
+          const ok = await createCategory({
+            name: categoryForm.name,
+            color: categoryForm.color,
+            sort_order: Number(categoryForm.sort_order || 1),
+          });
+          if (ok) setCategoryForm({ name: "", color: "#2563eb", sort_order: "1" });
+        }}>
+          <div>
+            <Label>Nome</Label>
+            <Input required value={categoryForm.name} onChange={(event) => setCategoryForm((prev) => ({ ...prev, name: event.target.value }))} />
+          </div>
+          <div>
+            <Label>Cor</Label>
+            <Input value={categoryForm.color} onChange={(event) => setCategoryForm((prev) => ({ ...prev, color: event.target.value }))} />
+          </div>
+          <div>
+            <Label>Ordem</Label>
+            <Input type="number" value={categoryForm.sort_order} onChange={(event) => setCategoryForm((prev) => ({ ...prev, sort_order: event.target.value }))} />
+          </div>
+          <Button type="submit" className="md:col-span-3 bg-gradient-primary text-white"><Plus className="mr-2 h-4 w-4" /> Adicionar categoria</Button>
+        </form>
       </Card>
     </AppLayout>
   );

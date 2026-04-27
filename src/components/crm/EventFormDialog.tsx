@@ -13,11 +13,12 @@ interface EventFormDialogProps {
   open: boolean;
   onOpenChange: (value: boolean) => void;
   initial?: EventWithResponsible | null;
+  defaultFront?: TablesInsert<"crm_events">["front"];
   profiles: SimpleProfile[];
   onSubmit: (payload: TablesInsert<"crm_events"> | TablesUpdate<"crm_events">) => Promise<boolean>;
 }
 
-export function EventFormDialog({ open, onOpenChange, initial, profiles, onSubmit }: EventFormDialogProps) {
+export function EventFormDialog({ open, onOpenChange, initial, defaultFront, profiles, onSubmit }: EventFormDialogProps) {
   const [busy, setBusy] = useState(false);
   const [form, setForm] = useState({
     title: "",
@@ -36,13 +37,13 @@ export function EventFormDialog({ open, onOpenChange, initial, profiles, onSubmi
       title: initial?.title ?? "",
       description: initial?.description ?? "",
       event_type: initial?.event_type ?? "reuniao",
-      front: initial?.front ?? "geral",
+      front: initial?.front ?? defaultFront ?? "geral",
       starts_at: formatDateInput(initial?.starts_at),
       ends_at: formatDateInput(initial?.ends_at),
       location: initial?.location ?? "",
       responsible_user_id: initial?.responsible_user_id ?? "",
     });
-  }, [initial, open]);
+  }, [defaultFront, initial, open]);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();

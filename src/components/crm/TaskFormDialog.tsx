@@ -13,12 +13,14 @@ interface TaskFormDialogProps {
   open: boolean;
   onOpenChange: (value: boolean) => void;
   initial?: TaskWithRelations | null;
+  defaultPersonId?: string;
+  defaultResponsibleUserId?: string | null;
   people: CrmPerson[];
   profiles: SimpleProfile[];
   onSubmit: (payload: TablesInsert<"crm_tasks"> | TablesUpdate<"crm_tasks">) => Promise<boolean>;
 }
 
-export function TaskFormDialog({ open, onOpenChange, initial, people, profiles, onSubmit }: TaskFormDialogProps) {
+export function TaskFormDialog({ open, onOpenChange, initial, defaultPersonId, defaultResponsibleUserId, people, profiles, onSubmit }: TaskFormDialogProps) {
   const [busy, setBusy] = useState(false);
   const [form, setForm] = useState({
     title: "",
@@ -35,13 +37,13 @@ export function TaskFormDialog({ open, onOpenChange, initial, people, profiles, 
     setForm({
       title: initial?.title ?? "",
       description: initial?.description ?? "",
-      person_id: initial?.person_id ?? "",
-      responsible_user_id: initial?.responsible_user_id ?? "",
+      person_id: initial?.person_id ?? defaultPersonId ?? "",
+      responsible_user_id: initial?.responsible_user_id ?? defaultResponsibleUserId ?? "",
       due_at: formatDateInput(initial?.due_at),
       priority: initial?.priority ?? "media",
       status: initial?.status ?? "aberta",
     });
-  }, [initial, open]);
+  }, [defaultPersonId, defaultResponsibleUserId, initial, open]);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();

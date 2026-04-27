@@ -13,6 +13,8 @@ interface PersonFormDialogProps {
   open: boolean;
   onOpenChange: (value: boolean) => void;
   initial?: PersonWithRelations | null;
+  defaultFront?: TablesInsert<"crm_people">["front"];
+  defaultLifecycle?: TablesInsert<"crm_people">["lifecycle_status"];
   profiles: SimpleProfile[];
   stages: CrmStage[];
   sources: CrmSource[];
@@ -22,7 +24,7 @@ interface PersonFormDialogProps {
   ) => Promise<boolean>;
 }
 
-export function PersonFormDialog({ open, onOpenChange, initial, profiles, stages, sources, onSubmit }: PersonFormDialogProps) {
+export function PersonFormDialog({ open, onOpenChange, initial, defaultFront, defaultLifecycle, profiles, stages, sources, onSubmit }: PersonFormDialogProps) {
   const [busy, setBusy] = useState(false);
   const [form, setForm] = useState({
     full_name: "",
@@ -30,9 +32,12 @@ export function PersonFormDialog({ open, onOpenChange, initial, profiles, stages
     email: "",
     phone: "",
     whatsapp: "",
+    address_line: "",
     neighborhood: "",
     city: "",
     state: "",
+    birth_date: "",
+    marital_status: "",
     front: "geral",
     lifecycle_status: "visitante",
     source_id: "",
@@ -51,11 +56,14 @@ export function PersonFormDialog({ open, onOpenChange, initial, profiles, stages
       email: initial?.email ?? "",
       phone: initial?.phone ?? "",
       whatsapp: initial?.whatsapp ?? "",
+      address_line: initial?.address_line ?? "",
       neighborhood: initial?.neighborhood ?? "",
       city: initial?.city ?? "",
       state: initial?.state ?? "",
-      front: initial?.front ?? "geral",
-      lifecycle_status: initial?.lifecycle_status ?? "visitante",
+      birth_date: initial?.birth_date ?? "",
+      marital_status: initial?.marital_status ?? "",
+      front: initial?.front ?? defaultFront ?? "geral",
+      lifecycle_status: initial?.lifecycle_status ?? defaultLifecycle ?? "visitante",
       source_id: initial?.source_id ?? "",
       current_stage_id: initial?.current_stage_id ?? stages[0]?.id ?? "",
       assigned_user_id: initial?.assigned_user_id ?? "",
@@ -63,7 +71,7 @@ export function PersonFormDialog({ open, onOpenChange, initial, profiles, stages
       summary: initial?.pipeline_card?.summary ?? "",
       next_action: initial?.pipeline_card?.next_action ?? "",
     });
-  }, [initial, open, stages]);
+  }, [defaultFront, defaultLifecycle, initial, open, stages]);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -75,9 +83,12 @@ export function PersonFormDialog({ open, onOpenChange, initial, profiles, stages
         email: form.email || null,
         phone: form.phone || null,
         whatsapp: form.whatsapp || null,
+        address_line: form.address_line || null,
         neighborhood: form.neighborhood || null,
         city: form.city || null,
         state: form.state || null,
+        birth_date: form.birth_date || null,
+        marital_status: form.marital_status || null,
         front: form.front as TablesInsert<"crm_people">["front"],
         lifecycle_status: form.lifecycle_status as TablesInsert<"crm_people">["lifecycle_status"],
         source_id: form.source_id || null,
@@ -124,6 +135,18 @@ export function PersonFormDialog({ open, onOpenChange, initial, profiles, stages
             <div>
               <Label>WhatsApp</Label>
               <Input value={form.whatsapp} onChange={(event) => setForm((prev) => ({ ...prev, whatsapp: event.target.value }))} />
+            </div>
+            <div>
+              <Label>Data de nascimento</Label>
+              <Input type="date" value={form.birth_date} onChange={(event) => setForm((prev) => ({ ...prev, birth_date: event.target.value }))} />
+            </div>
+            <div>
+              <Label>Estado civil</Label>
+              <Input value={form.marital_status} onChange={(event) => setForm((prev) => ({ ...prev, marital_status: event.target.value }))} />
+            </div>
+            <div>
+              <Label>Endereço</Label>
+              <Input value={form.address_line} onChange={(event) => setForm((prev) => ({ ...prev, address_line: event.target.value }))} />
             </div>
             <div>
               <Label>Bairro</Label>

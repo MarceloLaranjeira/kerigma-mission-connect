@@ -10,6 +10,22 @@ import Login from "./pages/auth/Login";
 import ResetPassword from "./pages/auth/ResetPassword";
 import Perfil from "./pages/Perfil";
 import Equipe from "./pages/missoes/Equipe";
+import MissoesDashboard from "./pages/missoes/Dashboard";
+import MissoesAgenda from "./pages/missoes/Agenda";
+import MissoesAtas from "./pages/missoes/Atas";
+import MissoesCampanhas from "./pages/missoes/Campanhas";
+import MissoesConfiguracoes from "./pages/missoes/Configuracoes";
+import MissoesConvertidos from "./pages/missoes/Convertidos";
+import MissoesDiscipulado from "./pages/missoes/Discipulado";
+import MissoesLocais from "./pages/missoes/Locais";
+import MissoesMissionarios from "./pages/missoes/Missionarios";
+import MissoesMundiais from "./pages/missoes/Mundiais";
+import MissoesNacionais from "./pages/missoes/Nacionais";
+import MissoesProjetos from "./pages/missoes/Projetos";
+import MissoesRibeirinhas from "./pages/missoes/Ribeirinhas";
+import MissoesTesouraria from "./pages/missoes/Tesouraria";
+import MissoesTreinamento from "./pages/missoes/Treinamento";
+import MissoesVisitantes from "./pages/missoes/Visitantes";
 import Dashboard from "./pages/crm/Dashboard";
 import People from "./pages/crm/People";
 import Pipeline from "./pages/crm/Pipeline";
@@ -47,6 +63,22 @@ const App = () => (
             <Route path="/relatorios" element={<P><Reports /></P>} />
             <Route path="/equipe" element={<P><Equipe /></P>} />
             <Route path="/configuracoes" element={<P><SettingsPage /></P>} />
+            <Route path="/missoes" element={<P><MissoesDashboard /></P>} />
+            <Route path="/missoes/locais" element={<P><MissoesLocais /></P>} />
+            <Route path="/missoes/ribeirinhas" element={<P><MissoesRibeirinhas /></P>} />
+            <Route path="/missoes/nacionais" element={<P><MissoesNacionais /></P>} />
+            <Route path="/missoes/mundiais" element={<P><MissoesMundiais /></P>} />
+            <Route path="/missoes/projetos" element={<P><MissoesProjetos /></P>} />
+            <Route path="/missoes/missionarios" element={<P><MissoesMissionarios /></P>} />
+            <Route path="/missoes/convertidos" element={<P><MissoesConvertidos /></P>} />
+            <Route path="/missoes/visitantes" element={<P><MissoesVisitantes /></P>} />
+            <Route path="/missoes/discipulado" element={<P><MissoesDiscipulado /></P>} />
+            <Route path="/missoes/treinamento" element={<P><MissoesTreinamento /></P>} />
+            <Route path="/missoes/agenda" element={<P><MissoesAgenda /></P>} />
+            <Route path="/missoes/campanhas" element={<P><MissoesCampanhas /></P>} />
+            <Route path="/missoes/tesouraria" element={<P><MissoesTesouraria /></P>} />
+            <Route path="/missoes/atas" element={<P><MissoesAtas /></P>} />
+            <Route path="/missoes/configuracoes" element={<P><MissoesConfiguracoes /></P>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>

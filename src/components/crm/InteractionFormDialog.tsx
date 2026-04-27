@@ -13,12 +13,14 @@ interface InteractionFormDialogProps {
   open: boolean;
   onOpenChange: (value: boolean) => void;
   initial?: InteractionWithPerson | null;
+  defaultPersonId?: string;
+  defaultResponsibleUserId?: string | null;
   people: CrmPerson[];
   profiles: SimpleProfile[];
   onSubmit: (payload: TablesInsert<"crm_interactions">) => Promise<boolean>;
 }
 
-export function InteractionFormDialog({ open, onOpenChange, initial, people, profiles, onSubmit }: InteractionFormDialogProps) {
+export function InteractionFormDialog({ open, onOpenChange, initial, defaultPersonId, defaultResponsibleUserId, people, profiles, onSubmit }: InteractionFormDialogProps) {
   const [busy, setBusy] = useState(false);
   const [form, setForm] = useState({
     person_id: "",
@@ -32,14 +34,14 @@ export function InteractionFormDialog({ open, onOpenChange, initial, people, pro
   useEffect(() => {
     if (!open) return;
     setForm({
-      person_id: initial?.person_id ?? people[0]?.id ?? "",
+      person_id: initial?.person_id ?? defaultPersonId ?? people[0]?.id ?? "",
       title: initial?.title ?? "",
       type: initial?.type ?? "nota",
       description: initial?.description ?? "",
       happened_at: formatDateInput(initial?.happened_at) || new Date().toISOString().slice(0, 16),
-      responsible_user_id: initial?.responsible_user_id ?? "",
+      responsible_user_id: initial?.responsible_user_id ?? defaultResponsibleUserId ?? "",
     });
-  }, [initial, open, people]);
+  }, [defaultPersonId, defaultResponsibleUserId, initial, open, people]);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();

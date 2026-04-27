@@ -1,14 +1,18 @@
 import { useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { LucideIcon, Plus, Search, Pencil, Trash2, Loader2 } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { LucideIcon, Plus, Search, Pencil, Trash2, Loader2, ArrowLeft, FileDown } from "lucide-react";
 import { Entry, EntryType, useEntries } from "@/hooks/useEntries";
 import { EntryDialog } from "./EntryDialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { useAuth } from "@/contexts/AuthContext";
+import { exportCSV, exportPDF } from "@/lib/exportData";
+import { formatCurrency, formatDate } from "@/lib/crm";
 
 interface Props {
   type: EntryType;
@@ -25,17 +29,38 @@ export function CrudPage({ type, icon: Icon, title, subtitle, versiculo, ctaLabe
   const { canEdit } = useAuth();
   const { items, loading, create, update, remove } = useEntries(type);
   const [q, setQ] = useState("");
+  const [filter, setFilter] = useState("todos");
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Entry | null>(null);
   const [confirmDel, setConfirmDel] = useState<Entry | null>(null);
 
   const filtered = useMemo(() => {
-    if (!q.trim()) return items;
     const s = q.toLowerCase();
-    return items.filter((i) =>
-      [i.title, i.subtitle, i.tag, i.meta, i.description].join(" ").toLowerCase().includes(s)
-    );
-  }, [items, q]);
+    return items.filter((i) => {
+      const matchesSearch = !q.trim() || [i.title, i.subtitle, i.tag, i.meta, i.description, i.status].join(" ").toLowerCase().includes(s);
+      const normalizedTag = (i.tag ?? "").toLowerCase();
+      const normalizedStatus = (i.status ?? "").toLowerCase();
+      const matchesFilter =
+        filter === "todos" ||
+        (filter === "ativos" && (normalizedTag.includes("ativ") || normalizedStatus.includes("ativ"))) ||
+        (filter === "programados" && (normalizedTag.includes("program") || normalizedStatus.includes("program"))) ||
+        (filter === "com_data" && Boolean(i.event_date)) ||
+        (filter === "com_valor" && Boolean(i.amount));
+      return matchesSearch && matchesFilter;
+    });
+  }, [filter, items, q]);
+
+  const exportRows = filtered.map((item) => ({
+    Título: item.title,
+    Subtítulo: item.subtitle ?? "",
+    Tag: item.tag ?? "",
+    Status: item.status ?? "",
+    Data: item.event_date ? formatDate(item.event_date) : "",
+    Valor: item.amount ? formatCurrency(item.amount) : "",
+    Info: item.meta ?? "",
+    Descrição: item.description ?? "",
+  }));
+  const exportColumns = ["Título", "Subtítulo", "Tag", "Status", "Data", "Valor", "Info", "Descrição"];
 
   const stats = statsBuilder
     ? statsBuilder(items)
@@ -43,7 +68,7 @@ export function CrudPage({ type, icon: Icon, title, subtitle, versiculo, ctaLabe
         { label: "Total", value: String(items.length) },
         { label: "Ativos", value: String(items.filter(i => (i.tag ?? "").toLowerCase().includes("ativ")).length) },
         { label: "Programados", value: String(items.filter(i => (i.tag ?? "").toLowerCase().includes("program")).length) },
-        { label: "Mês atual", value: String(items.filter(i => i.event_date && new Date(i.event_date).getMonth() === new Date().getMonth()).length) },
+        { label: "Com valor", value: String(items.filter(i => Boolean(i.amount)).length) },
       ];
 
   return (
@@ -65,11 +90,16 @@ export function CrudPage({ type, icon: Icon, title, subtitle, versiculo, ctaLabe
               )}
             </div>
           </div>
-          {canEdit && (
-            <Button onClick={() => { setEditing(null); setOpen(true); }} className="bg-white text-primary hover:bg-white/90 shadow-elegant">
-              <Plus className="h-4 w-4 mr-1" /> {ctaLabel}
+          <div className="flex flex-wrap gap-2">
+            <Button asChild variant="secondary" className="bg-white/10 text-white hover:bg-white/20">
+              <Link to="/missoes"><ArrowLeft className="mr-2 h-4 w-4" /> Painel</Link>
             </Button>
-          )}
+            {canEdit && (
+              <Button onClick={() => { setEditing(null); setOpen(true); }} className="bg-white text-primary hover:bg-white/90 shadow-elegant">
+                <Plus className="h-4 w-4 mr-1" /> {ctaLabel}
+              </Button>
+            )}
+          </div>
         </div>
       </Card>
 
@@ -85,11 +115,27 @@ export function CrudPage({ type, icon: Icon, title, subtitle, versiculo, ctaLabe
 
       {/* Toolbar */}
       <Card className="p-4 bg-gradient-card border-border/60 shadow-card">
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input placeholder="Buscar..." className="pl-9 bg-background" value={q} onChange={(e)=>setQ(e.target.value)} />
+            <Input placeholder="Buscar por título, responsável, tag, status ou descrição..." className="pl-9 bg-background" value={q} onChange={(e)=>setQ(e.target.value)} />
           </div>
+          <Select value={filter} onValueChange={setFilter}>
+            <SelectTrigger className="w-full bg-background md:w-44"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="todos">Todos</SelectItem>
+              <SelectItem value="ativos">Ativos</SelectItem>
+              <SelectItem value="programados">Programados</SelectItem>
+              <SelectItem value="com_data">Com data</SelectItem>
+              <SelectItem value="com_valor">Com valor</SelectItem>
+            </SelectContent>
+          </Select>
+          <Button variant="outline" onClick={() => exportCSV(`${type}-${new Date().toISOString().slice(0, 10)}.csv`, exportColumns, exportRows)}>
+            <FileDown className="mr-2 h-4 w-4" /> CSV
+          </Button>
+          <Button variant="outline" onClick={() => exportPDF(`${type}-${new Date().toISOString().slice(0, 10)}.pdf`, title, exportColumns, exportRows, `${filtered.length} registros`)}>
+            <FileDown className="mr-2 h-4 w-4" /> PDF
+          </Button>
         </div>
       </Card>
 
@@ -117,11 +163,12 @@ export function CrudPage({ type, icon: Icon, title, subtitle, versiculo, ctaLabe
                   <p className="font-semibold truncate">{it.title}</p>
                   <p className="text-sm text-muted-foreground truncate">
                     {it.subtitle ?? ""}
-                    {it.event_date ? ` · ${new Date(it.event_date).toLocaleDateString("pt-BR")}` : ""}
-                    {it.amount ? ` · R$ ${it.amount.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}` : ""}
+                    {it.event_date ? ` · ${formatDate(it.event_date)}` : ""}
+                    {it.amount ? ` · ${formatCurrency(it.amount)}` : ""}
                   </p>
                 </div>
                 {it.tag && <Badge className="bg-primary/10 text-primary border-0 hover:bg-primary/15">{it.tag}</Badge>}
+                {it.status && <Badge variant="outline">{it.status}</Badge>}
                 {it.meta && <span className="text-xs text-muted-foreground hidden md:inline">{it.meta}</span>}
                 {canEdit && (
                   <div className="flex items-center gap-1">
