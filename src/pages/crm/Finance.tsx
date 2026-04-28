@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { Landmark, Plus, Scale, Trash2 } from "lucide-react";
+import { Landmark, Pencil, Plus, Scale, Trash2 } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { CrmHero } from "@/components/crm/CrmHero";
 import { FinancialEntryDialog } from "@/components/crm/FinancialEntryDialog";
@@ -10,16 +10,32 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAuth } from "@/contexts/AuthContext";
-import { useCrmCampaigns, useCrmFinancial, useLookupMaps } from "@/hooks/use-crm";
+import { type FinancialEntryWithRelations, useCrmCampaigns, useCrmFinancial, useLookupMaps } from "@/hooks/use-crm";
 import { CRM_FINANCIAL_TYPE_OPTIONS, CRM_FRONT_OPTIONS, formatCurrency, formatDate, frontLabel } from "@/lib/crm";
 
 export default function Finance() {
   const { canEdit } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
-  const { items, loading, create, remove } = useCrmFinancial();
+  const { items, loading, create, update, remove } = useCrmFinancial();
   const { items: campaigns } = useCrmCampaigns();
   const { profiles, categories } = useLookupMaps();
   const [open, setOpen] = useState(false);
+  const [editing, setEditing] = useState<FinancialEntryWithRelations | null>(null);
+
+  const handleEdit = (entry: FinancialEntryWithRelations) => {
+    setEditing(entry);
+    setOpen(true);
+  };
+
+  const handleDialogOpenChange = (value: boolean) => {
+    setOpen(value);
+    if (!value) setEditing(null);
+  };
+
+  const handleSubmit = async (payload: Parameters<typeof create>[0]) => {
+    if (editing) return update(editing.id, payload);
+    return create(payload);
+  };
   const [query, setQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState("todos");
   const [campaignFilter, setCampaignFilter] = useState("todas");
@@ -134,13 +150,18 @@ export default function Finance() {
                   <span>{formatDate(entry.entry_date)}</span>
                 </div>
               </div>
-              {canEdit ? <Button size="icon" variant="ghost" className="text-destructive" onClick={() => void remove(entry.id)}><Trash2 className="h-4 w-4" /></Button> : null}
+              {canEdit ? (
+                <div className="flex gap-1">
+                  <Button size="icon" variant="ghost" onClick={() => handleEdit(entry)}><Pencil className="h-4 w-4" /></Button>
+                  <Button size="icon" variant="ghost" className="text-destructive" onClick={() => void remove(entry.id)}><Trash2 className="h-4 w-4" /></Button>
+                </div>
+              ) : null}
             </div>
           </Card>
         ))}
       </div>
 
-      <FinancialEntryDialog open={open} onOpenChange={setOpen} categories={categories} campaigns={campaigns} profiles={profiles} onSubmit={create} />
+      <FinancialEntryDialog open={open} onOpenChange={handleDialogOpenChange} initial={editing} categories={categories} campaigns={campaigns} profiles={profiles} onSubmit={handleSubmit} />
     </AppLayout>
   );
 }

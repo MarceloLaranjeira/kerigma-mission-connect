@@ -367,6 +367,17 @@ export function useCrmInteractions() {
     return true;
   };
 
+  const update = async (id: string, payload: TablesUpdate<"crm_interactions">) => {
+    const { error } = await supabase.from("crm_interactions").update(payload).eq("id", id);
+    if (error) {
+      toast.error(friendlyError(error, "Não foi possível atualizar a atividade."));
+      return false;
+    }
+    toast.success("Atividade atualizada.");
+    await reload();
+    return true;
+  };
+
   const remove = async (id: string) => {
     const { error } = await supabase.from("crm_interactions").delete().eq("id", id);
     if (error) {
@@ -378,7 +389,7 @@ export function useCrmInteractions() {
     return true;
   };
 
-  return { items, loading, reload, create, remove };
+  return { items, loading, reload, create, update, remove };
 }
 
 export function useCrmTasks() {
@@ -644,6 +655,17 @@ export function useCrmFinancial() {
     return true;
   };
 
+  const update = async (id: string, payload: TablesUpdate<"crm_financial_entries">) => {
+    const { error } = await supabase.from("crm_financial_entries").update(payload).eq("id", id);
+    if (error) {
+      toast.error(friendlyError(error, "Não foi possível atualizar o lançamento."));
+      return false;
+    }
+    toast.success("Lançamento atualizado.");
+    await reload();
+    return true;
+  };
+
   const remove = async (id: string) => {
     const { error } = await supabase.from("crm_financial_entries").delete().eq("id", id);
     if (error) {
@@ -655,7 +677,7 @@ export function useCrmFinancial() {
     return true;
   };
 
-  return { items, loading, reload, create, remove };
+  return { items, loading, reload, create, update, remove };
 }
 
 export function useCrmDashboard() {

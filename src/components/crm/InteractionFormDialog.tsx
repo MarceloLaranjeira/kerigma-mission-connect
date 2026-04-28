@@ -62,7 +62,7 @@ export function InteractionFormDialog({ open, onOpenChange, initial, defaultPers
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Nova atividade</DialogTitle>
+          <DialogTitle>{initial ? "Editar atividade" : "Nova atividade"}</DialogTitle>
           <DialogDescription>Registre visitas, ligações, orações e outros movimentos do cuidado pastoral.</DialogDescription>
         </DialogHeader>
         <form className="space-y-4" onSubmit={handleSubmit}>
@@ -116,7 +116,7 @@ export function InteractionFormDialog({ open, onOpenChange, initial, defaultPers
           </div>
           <DialogFooter>
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Cancelar</Button>
-            <Button type="submit" className="bg-gradient-primary text-white" disabled={busy}>{busy ? "Salvando..." : "Registrar atividade"}</Button>
+            <Button type="submit" className="bg-gradient-primary text-white" disabled={busy}>{busy ? "Salvando..." : initial ? "Salvar alterações" : "Registrar atividade"}</Button>
           </DialogFooter>
         </form>
       </DialogContent>

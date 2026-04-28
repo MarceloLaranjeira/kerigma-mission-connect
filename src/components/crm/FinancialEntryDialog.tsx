@@ -6,19 +6,20 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { CRM_FINANCIAL_TYPE_OPTIONS } from "@/lib/crm";
-import { type CampaignWithOwner, type CrmFinancialCategory, type SimpleProfile } from "@/hooks/use-crm";
+import { type CampaignWithOwner, type CrmFinancialCategory, type FinancialEntryWithRelations, type SimpleProfile } from "@/hooks/use-crm";
 import { type TablesInsert } from "@/integrations/supabase/types";
 
 interface FinancialEntryDialogProps {
   open: boolean;
   onOpenChange: (value: boolean) => void;
+  initial?: FinancialEntryWithRelations | null;
   categories: CrmFinancialCategory[];
   campaigns: CampaignWithOwner[];
   profiles: SimpleProfile[];
   onSubmit: (payload: TablesInsert<"crm_financial_entries">) => Promise<boolean>;
 }
 
-export function FinancialEntryDialog({ open, onOpenChange, categories, campaigns, profiles, onSubmit }: FinancialEntryDialogProps) {
+export function FinancialEntryDialog({ open, onOpenChange, initial, categories, campaigns, profiles, onSubmit }: FinancialEntryDialogProps) {
   const [busy, setBusy] = useState(false);
   const [form, setForm] = useState({
     type: "entrada",
@@ -33,15 +34,15 @@ export function FinancialEntryDialog({ open, onOpenChange, categories, campaigns
   useEffect(() => {
     if (!open) return;
     setForm({
-      type: "entrada",
-      category_id: categories[0]?.id ?? "",
-      campaign_id: "",
-      responsible_user_id: "",
-      amount: "",
-      entry_date: new Date().toISOString().slice(0, 10),
-      description: "",
+      type: initial?.type ?? "entrada",
+      category_id: initial?.category_id ?? categories[0]?.id ?? "",
+      campaign_id: initial?.campaign_id ?? "",
+      responsible_user_id: initial?.responsible_user_id ?? "",
+      amount: initial?.amount != null ? String(initial.amount) : "",
+      entry_date: initial?.entry_date ?? new Date().toISOString().slice(0, 10),
+      description: initial?.description ?? "",
     });
-  }, [categories, open]);
+  }, [categories, initial, open]);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -63,7 +64,7 @@ export function FinancialEntryDialog({ open, onOpenChange, categories, campaigns
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Novo lançamento</DialogTitle>
+          <DialogTitle>{initial ? "Editar lançamento" : "Novo lançamento"}</DialogTitle>
           <DialogDescription>Registre entradas e saídas ligadas à operação ou às campanhas.</DialogDescription>
         </DialogHeader>
         <form className="space-y-4" onSubmit={handleSubmit}>
@@ -130,7 +131,7 @@ export function FinancialEntryDialog({ open, onOpenChange, categories, campaigns
           </div>
           <DialogFooter>
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Cancelar</Button>
-            <Button type="submit" className="bg-gradient-primary text-white" disabled={busy}>{busy ? "Salvando..." : "Registrar lançamento"}</Button>
+            <Button type="submit" className="bg-gradient-primary text-white" disabled={busy}>{busy ? "Salvando..." : initial ? "Salvar alterações" : "Registrar lançamento"}</Button>
           </DialogFooter>
         </form>
       </DialogContent>

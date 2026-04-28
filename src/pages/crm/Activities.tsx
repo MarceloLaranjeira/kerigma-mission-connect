@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { Activity, Plus, Trash2 } from "lucide-react";
+import { Activity, Pencil, Plus, Trash2 } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { CrmHero } from "@/components/crm/CrmHero";
 import { InteractionFormDialog } from "@/components/crm/InteractionFormDialog";
@@ -10,19 +10,35 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAuth } from "@/contexts/AuthContext";
-import { useCrmInteractions, useCrmPeople, useLookupMaps } from "@/hooks/use-crm";
+import { type InteractionWithPerson, useCrmInteractions, useCrmPeople, useLookupMaps } from "@/hooks/use-crm";
 import { CRM_FRONT_OPTIONS, CRM_INTERACTION_TYPE_OPTIONS, formatDate, frontLabel } from "@/lib/crm";
 
 export default function Activities() {
   const { canEdit } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
-  const { items, loading, create, remove } = useCrmInteractions();
+  const { items, loading, create, update, remove } = useCrmInteractions();
   const { items: people } = useCrmPeople();
   const { profiles } = useLookupMaps();
   const [query, setQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState("todos");
   const [frontFilter, setFrontFilter] = useState(() => searchParams.get("front") || "todas");
   const [open, setOpen] = useState(false);
+  const [editing, setEditing] = useState<InteractionWithPerson | null>(null);
+
+  const handleEdit = (item: InteractionWithPerson) => {
+    setEditing(item);
+    setOpen(true);
+  };
+
+  const handleDialogOpenChange = (value: boolean) => {
+    setOpen(value);
+    if (!value) setEditing(null);
+  };
+
+  const handleSubmit = async (payload: Parameters<typeof create>[0]) => {
+    if (editing) return update(editing.id, payload);
+    return create(payload);
+  };
 
   const filtered = useMemo(() => {
     const term = query.trim().toLowerCase();
@@ -113,13 +129,18 @@ export default function Activities() {
                   <span>{formatDate(item.happened_at, true)}</span>
                 </div>
               </div>
-              {canEdit ? <Button size="icon" variant="ghost" className="text-destructive" onClick={() => void remove(item.id)}><Trash2 className="h-4 w-4" /></Button> : null}
+              {canEdit ? (
+                <div className="flex gap-1">
+                  <Button size="icon" variant="ghost" onClick={() => handleEdit(item)}><Pencil className="h-4 w-4" /></Button>
+                  <Button size="icon" variant="ghost" className="text-destructive" onClick={() => void remove(item.id)}><Trash2 className="h-4 w-4" /></Button>
+                </div>
+              ) : null}
             </div>
           </Card>
         ))}
       </div>
 
-      <InteractionFormDialog open={open} onOpenChange={setOpen} people={people} profiles={profiles} onSubmit={create} />
+      <InteractionFormDialog open={open} onOpenChange={handleDialogOpenChange} initial={editing} people={people} profiles={profiles} onSubmit={handleSubmit} />
     </AppLayout>
   );
 }
